@@ -3,22 +3,45 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Flopro WA - Revolutionary Workflow Automation</title>
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <title>Flopro WA - Next-Gen Workflow Automation</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
     <style>
         :root {
-            --primary: #6366f1;
-            --primary-dark: #4f46e5;
-            --secondary: #06b6d4;
-            --accent: #f59e0b;
-            --dark: #0f172a;
-            --light: #f8fafc;
-            --gray-100: #f1f5f9;
-            --gray-200: #e2e8f0;
-            --gray-300: #cbd5e1;
-            --gray-800: #1e293b;
-            --glass: rgba(255, 255, 255, 0.1);
+            /* Core Colors */
+            --primary-black: #0a0a0b;
+            --secondary-black: #1a1a1d;
+            --tertiary-black: #2d2d30;
+            --quaternary-black: #404043;
+            
+            --primary-blue: #0066ff;
+            --secondary-blue: #0052cc;
+            --tertiary-blue: #004db3;
+            --electric-blue: #00d4ff;
+            --neon-blue: #4dabf7;
+            
+            --pure-white: #ffffff;
+            --off-white: #f8f9fa;
+            --light-gray: #e9ecef;
+            --medium-gray: #6c757d;
+            
+            /* Gradients */
+            --gradient-primary: linear-gradient(135deg, var(--primary-blue) 0%, var(--electric-blue) 100%);
+            --gradient-secondary: linear-gradient(135deg, var(--secondary-black) 0%, var(--tertiary-black) 100%);
+            --gradient-accent: linear-gradient(90deg, var(--primary-blue), var(--electric-blue), var(--neon-blue));
+            --gradient-hero: linear-gradient(135deg, var(--primary-black) 0%, var(--secondary-black) 50%, var(--tertiary-black) 100%);
+            
+            /* Glassmorphism */
+            --glass-primary: rgba(255, 255, 255, 0.1);
+            --glass-secondary: rgba(0, 102, 255, 0.1);
             --glass-border: rgba(255, 255, 255, 0.2);
+            
+            /* Shadows */
+            --shadow-soft: 0 4px 20px rgba(0, 0, 0, 0.1);
+            --shadow-medium: 0 8px 30px rgba(0, 0, 0, 0.15);
+            --shadow-hard: 0 12px 40px rgba(0, 0, 0, 0.2);
+            --shadow-glow: 0 0 30px rgba(0, 102, 255, 0.3);
+            --shadow-blue: 0 8px 32px rgba(0, 102, 255, 0.2);
         }
 
         * {
@@ -28,10 +51,12 @@
         }
 
         body {
-            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
             line-height: 1.6;
-            color: var(--gray-800);
+            color: var(--pure-white);
+            background: var(--primary-black);
             overflow-x: hidden;
+            font-weight: 400;
         }
 
         /* Navigation */
@@ -40,20 +65,20 @@
             top: 0;
             left: 0;
             right: 0;
-            background: rgba(255, 255, 255, 0.95);
-            backdrop-filter: blur(20px);
+            background: rgba(10, 10, 11, 0.95);
+            backdrop-filter: blur(20px) saturate(180%);
             border-bottom: 1px solid var(--glass-border);
             z-index: 1000;
-            transition: all 0.3s ease;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         }
 
         .navbar.scrolled {
-            background: rgba(255, 255, 255, 0.98);
-            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+            background: rgba(10, 10, 11, 0.98);
+            box-shadow: var(--shadow-medium);
         }
 
         .nav-container {
-            max-width: 1200px;
+            max-width: 1400px;
             margin: 0 auto;
             padding: 1rem 2rem;
             display: flex;
@@ -62,133 +87,109 @@
         }
 
         .logo {
-            font-size: 1.5rem;
-            font-weight: 700;
-            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            font-size: 1.75rem;
+            font-weight: 800;
+            background: var(--gradient-primary);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
             background-clip: text;
+            letter-spacing: -0.5px;
+            position: relative;
+        }
+
+        .logo::after {
+            content: '';
+            position: absolute;
+            bottom: -2px;
+            left: 0;
+            width: 100%;
+            height: 2px;
+            background: var(--gradient-primary);
+            transform: scaleX(0);
+            transform-origin: right;
+            transition: transform 0.3s ease;
+        }
+
+        .logo:hover::after {
+            transform: scaleX(1);
+            transform-origin: left;
         }
 
         .nav-links {
             display: flex;
-            gap: 2rem;
+            gap: 2.5rem;
             list-style: none;
+            align-items: center;
         }
 
         .nav-links a {
             text-decoration: none;
-            color: var(--gray-800);
+            color: var(--off-white);
             font-weight: 500;
-            transition: color 0.3s ease;
+            font-size: 0.95rem;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
             position: relative;
+            padding: 0.5rem 0;
         }
 
-        .nav-links a::after {
+        .nav-links a::before {
             content: '';
             position: absolute;
+            bottom: 0;
+            left: 0;
             width: 0;
             height: 2px;
-            bottom: -5px;
-            left: 0;
-            background: linear-gradient(135deg, var(--primary), var(--secondary));
-            transition: width 0.3s ease;
+            background: var(--gradient-primary);
+            transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         }
 
-        .nav-links a:hover::after {
+        .nav-links a:hover {
+            color: var(--pure-white);
+            transform: translateY(-1px);
+        }
+
+        .nav-links a:hover::before {
             width: 100%;
         }
 
-        .cta-nav {
-            background: linear-gradient(135deg, var(--primary), var(--secondary));
-            color: white;
-            padding: 0.75rem 1.5rem;
-            border-radius: 50px;
-            text-decoration: none;
-            font-weight: 600;
-            transition: all 0.3s ease;
-            box-shadow: 0 4px 15px rgba(99, 102, 241, 0.3);
-        }
-
-        .cta-nav:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 8px 25px rgba(99, 102, 241, 0.4);
-        }
-
-        /* Hero Section */
-        .hero {
-            min-height: 100vh;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%);
-            position: relative;
-            overflow: hidden;
+        .nav-actions {
             display: flex;
+            gap: 1rem;
             align-items: center;
         }
 
-        .hero::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.05'%3E%3Ccircle cx='30' cy='30' r='2'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
-            animation: float 20s ease-in-out infinite;
-        }
-
-        @keyframes float {
-            0%, 100% { transform: translateY(0px); }
-            50% { transform: translateY(-20px); }
-        }
-
-        .hero-content {
-            max-width: 1200px;
-            margin: 0 auto;
-            padding: 0 2rem;
-            text-align: center;
-            color: white;
+        .btn {
+            padding: 0.75rem 1.5rem;
+            border: none;
+            border-radius: 8px;
+            text-decoration: none;
+            font-weight: 600;
+            font-size: 0.9rem;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            cursor: pointer;
             position: relative;
-            z-index: 2;
+            overflow: hidden;
         }
 
-        .hero-title {
-            font-size: clamp(3rem, 8vw, 6rem);
-            font-weight: 800;
-            margin-bottom: 1.5rem;
-            line-height: 1.1;
-            text-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
-            animation: fadeInUp 1s ease-out;
+        .btn-ghost {
+            background: transparent;
+            color: var(--off-white);
+            border: 1px solid var(--glass-border);
         }
 
-        .hero-subtitle {
-            font-size: clamp(1.2rem, 3vw, 1.5rem);
-            margin-bottom: 2rem;
-            opacity: 0.9;
-            max-width: 600px;
-            margin-left: auto;
-            margin-right: auto;
-            animation: fadeInUp 1s ease-out 0.2s both;
-        }
-
-        .hero-buttons {
-            display: flex;
-            gap: 1rem;
-            justify-content: center;
-            flex-wrap: wrap;
-            animation: fadeInUp 1s ease-out 0.4s both;
+        .btn-ghost:hover {
+            background: var(--glass-primary);
+            border-color: var(--primary-blue);
+            color: var(--pure-white);
+            transform: translateY(-1px);
         }
 
         .btn-primary {
-            background: white;
-            color: var(--primary);
-            padding: 1rem 2rem;
-            border-radius: 50px;
-            text-decoration: none;
-            font-weight: 600;
-            transition: all 0.3s ease;
-            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+            background: var(--gradient-primary);
+            color: var(--pure-white);
+            border: none;
+            box-shadow: var(--shadow-blue);
             position: relative;
-            overflow: hidden;
         }
 
         .btn-primary::before {
@@ -202,109 +203,388 @@
             transition: left 0.5s ease;
         }
 
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 12px 40px rgba(0, 102, 255, 0.4);
+        }
+
         .btn-primary:hover::before {
             left: 100%;
         }
 
-        .btn-secondary {
-            background: transparent;
-            color: white;
-            padding: 1rem 2rem;
-            border-radius: 50px;
-            text-decoration: none;
-            font-weight: 600;
-            border: 2px solid white;
-            transition: all 0.3s ease;
-        }
-
-        .btn-secondary:hover {
-            background: white;
-            color: var(--primary);
-            transform: translateY(-2px);
-        }
-
-        /* Features Section */
-        .features {
-            padding: 5rem 0;
-            background: var(--light);
-        }
-
-        .features-container {
-            max-width: 1200px;
-            margin: 0 auto;
-            padding: 0 2rem;
-        }
-
-        .features-header {
-            text-align: center;
-            margin-bottom: 4rem;
-        }
-
-        .features-title {
-            font-size: clamp(2rem, 5vw, 3rem);
-            font-weight: 700;
-            margin-bottom: 1rem;
-            background: linear-gradient(135deg, var(--primary), var(--secondary));
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-        }
-
-        .features-subtitle {
-            font-size: 1.2rem;
-            color: var(--gray-800);
-            max-width: 600px;
-            margin: 0 auto;
-            opacity: 0.8;
-        }
-
-        .features-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-            gap: 2rem;
-        }
-
-        .feature-card {
-            background: white;
-            padding: 2.5rem;
-            border-radius: 20px;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
-            transition: all 0.3s ease;
+        /* Hero Section */
+        .hero {
+            min-height: 100vh;
+            background: var(--gradient-hero);
             position: relative;
+            display: flex;
+            align-items: center;
             overflow: hidden;
-            border: 1px solid var(--gray-200);
         }
 
-        .feature-card::before {
+        .hero::before {
             content: '';
             position: absolute;
             top: 0;
             left: 0;
+            right: 0;
+            bottom: 0;
+            background: 
+                radial-gradient(circle at 20% 50%, rgba(0, 102, 255, 0.1) 0%, transparent 50%),
+                radial-gradient(circle at 80% 20%, rgba(0, 212, 255, 0.1) 0%, transparent 50%),
+                radial-gradient(circle at 40% 80%, rgba(77, 171, 247, 0.1) 0%, transparent 50%);
+            animation: float 20s ease-in-out infinite;
+        }
+
+        .hero-grid {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-image: 
+                linear-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
+            background-size: 50px 50px;
+            animation: gridMove 30s linear infinite;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0px) rotate(0deg); }
+            33% { transform: translateY(-20px) rotate(1deg); }
+            66% { transform: translateY(10px) rotate(-0.5deg); }
+        }
+
+        @keyframes gridMove {
+            0% { transform: translateX(0) translateY(0); }
+            100% { transform: translateX(50px) translateY(50px); }
+        }
+
+        .hero-content {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 0 2rem;
+            position: relative;
+            z-index: 2;
+        }
+
+        .hero-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            background: var(--glass-primary);
+            border: 1px solid var(--glass-border);
+            border-radius: 50px;
+            padding: 0.5rem 1rem;
+            font-size: 0.85rem;
+            font-weight: 500;
+            margin-bottom: 2rem;
+            backdrop-filter: blur(10px);
+            animation: fadeInUp 1s ease-out 0.2s both;
+        }
+
+        .hero-badge i {
+            color: var(--electric-blue);
+        }
+
+        .hero-title {
+            font-size: clamp(3rem, 8vw, 7rem);
+            font-weight: 900;
+            line-height: 1.1;
+            margin-bottom: 1.5rem;
+            background: linear-gradient(135deg, var(--pure-white) 0%, var(--electric-blue) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            letter-spacing: -2px;
+            animation: fadeInUp 1s ease-out 0.4s both;
+        }
+
+        .hero-subtitle {
+            font-size: clamp(1.2rem, 3vw, 1.5rem);
+            font-weight: 400;
+            margin-bottom: 3rem;
+            color: var(--light-gray);
+            max-width: 600px;
+            line-height: 1.6;
+            animation: fadeInUp 1s ease-out 0.6s both;
+        }
+
+        .hero-actions {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 4rem;
+            animation: fadeInUp 1s ease-out 0.8s both;
+        }
+
+        .btn-hero-primary {
+            padding: 1rem 2rem;
+            font-size: 1.1rem;
+            border-radius: 12px;
+            background: var(--gradient-primary);
+            color: var(--pure-white);
+            text-decoration: none;
+            font-weight: 600;
+            box-shadow: var(--shadow-blue);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .btn-hero-primary::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
             width: 100%;
-            height: 4px;
-            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+            transition: left 0.5s ease;
+        }
+
+        .btn-hero-primary:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 16px 50px rgba(0, 102, 255, 0.5);
+        }
+
+        .btn-hero-primary:hover::before {
+            left: 100%;
+        }
+
+        .btn-hero-secondary {
+            padding: 1rem 2rem;
+            font-size: 1.1rem;
+            border-radius: 12px;
+            background: var(--glass-primary);
+            border: 1px solid var(--glass-border);
+            color: var(--pure-white);
+            text-decoration: none;
+            font-weight: 600;
+            backdrop-filter: blur(10px);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .btn-hero-secondary:hover {
+            background: var(--glass-secondary);
+            border-color: var(--primary-blue);
+            transform: translateY(-2px);
+        }
+
+        .hero-stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 2rem;
+            max-width: 600px;
+            animation: fadeInUp 1s ease-out 1s both;
+        }
+
+        .stat-item {
+            text-align: center;
+        }
+
+        .stat-number {
+            font-size: 2rem;
+            font-weight: 800;
+            background: var(--gradient-primary);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 0.25rem;
+        }
+
+        .stat-label {
+            font-size: 0.9rem;
+            color: var(--medium-gray);
+            font-weight: 500;
+        }
+
+        /* Services Section */
+        .services {
+            padding: 8rem 0;
+            background: var(--secondary-black);
+            position: relative;
+        }
+
+        .services::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 100px;
+            background: linear-gradient(180deg, var(--primary-black) 0%, var(--secondary-black) 100%);
+        }
+
+        .services-container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 0 2rem;
+        }
+
+        .section-header {
+            text-align: center;
+            margin-bottom: 5rem;
+        }
+
+        .section-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            background: var(--glass-secondary);
+            border: 1px solid var(--primary-blue);
+            border-radius: 50px;
+            padding: 0.5rem 1rem;
+            font-size: 0.85rem;
+            font-weight: 500;
+            margin-bottom: 1rem;
+            backdrop-filter: blur(10px);
+            color: var(--electric-blue);
+        }
+
+        .section-title {
+            font-size: clamp(2.5rem, 6vw, 4rem);
+            font-weight: 800;
+            margin-bottom: 1rem;
+            background: linear-gradient(135deg, var(--pure-white) 0%, var(--electric-blue) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            letter-spacing: -1px;
+        }
+
+        .section-subtitle {
+            font-size: 1.2rem;
+            color: var(--light-gray);
+            max-width: 600px;
+            margin: 0 auto;
+            line-height: 1.6;
+        }
+
+        .services-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+            gap: 2rem;
+        }
+
+        .service-card {
+            background: var(--glass-primary);
+            border: 1px solid var(--glass-border);
+            border-radius: 20px;
+            padding: 2.5rem;
+            backdrop-filter: blur(20px);
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .service-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: var(--gradient-primary);
             transform: scaleX(0);
             transition: transform 0.3s ease;
         }
 
-        .feature-card:hover {
-            transform: translateY(-10px);
-            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
+        .service-card:hover {
+            transform: translateY(-8px);
+            background: rgba(255, 255, 255, 0.15);
+            border-color: var(--primary-blue);
+            box-shadow: var(--shadow-glow);
         }
 
-        .feature-card:hover::before {
+        .service-card:hover::before {
             transform: scaleX(1);
+        }
+
+        .service-icon {
+            width: 70px;
+            height: 70px;
+            background: var(--gradient-primary);
+            border-radius: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.75rem;
+            margin-bottom: 1.5rem;
+            box-shadow: var(--shadow-blue);
+        }
+
+        .service-title {
+            font-size: 1.5rem;
+            font-weight: 700;
+            margin-bottom: 1rem;
+            color: var(--pure-white);
+            letter-spacing: -0.5px;
+        }
+
+        .service-description {
+            color: var(--light-gray);
+            line-height: 1.7;
+            margin-bottom: 2rem;
+            font-size: 1rem;
+        }
+
+        .service-btn {
+            background: var(--gradient-primary);
+            color: var(--pure-white);
+            padding: 0.75rem 1.5rem;
+            border: none;
+            border-radius: 10px;
+            text-decoration: none;
+            font-weight: 600;
+            font-size: 0.95rem;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            box-shadow: var(--shadow-blue);
+        }
+
+        .service-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 12px 40px rgba(0, 102, 255, 0.4);
+        }
+
+        /* Features Section */
+        .features {
+            padding: 8rem 0;
+            background: var(--tertiary-black);
+        }
+
+        .features-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 2rem;
+            margin-top: 3rem;
+        }
+
+        .feature-card {
+            background: var(--glass-primary);
+            border: 1px solid var(--glass-border);
+            border-radius: 16px;
+            padding: 2rem;
+            backdrop-filter: blur(20px);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .feature-card:hover {
+            transform: translateY(-5px);
+            background: rgba(255, 255, 255, 0.15);
+            border-color: var(--primary-blue);
         }
 
         .feature-icon {
             width: 60px;
             height: 60px;
-            background: linear-gradient(135deg, var(--primary), var(--secondary));
-            border-radius: 15px;
+            background: var(--gradient-primary);
+            border-radius: 12px;
             display: flex;
             align-items: center;
             justify-content: center;
-            color: white;
             font-size: 1.5rem;
             margin-bottom: 1.5rem;
         }
@@ -313,122 +593,71 @@
             font-size: 1.25rem;
             font-weight: 600;
             margin-bottom: 1rem;
-            color: var(--dark);
+            color: var(--pure-white);
         }
 
         .feature-description {
-            color: var(--gray-800);
+            color: var(--light-gray);
             line-height: 1.6;
-        }
-
-        /* Stats Section */
-        .stats {
-            padding: 5rem 0;
-            background: linear-gradient(135deg, var(--dark), var(--gray-800));
-            color: white;
-        }
-
-        .stats-container {
-            max-width: 1200px;
-            margin: 0 auto;
-            padding: 0 2rem;
-        }
-
-        .stats-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 2rem;
-            text-align: center;
-        }
-
-        .stat-item {
-            padding: 2rem;
-        }
-
-        .stat-number {
-            font-size: 3rem;
-            font-weight: 800;
-            margin-bottom: 0.5rem;
-            background: linear-gradient(135deg, var(--secondary), var(--accent));
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-        }
-
-        .stat-label {
-            font-size: 1.1rem;
-            opacity: 0.9;
-            font-weight: 500;
         }
 
         /* CTA Section */
         .cta {
-            padding: 5rem 0;
-            background: linear-gradient(135deg, var(--primary), var(--secondary));
-            color: white;
-            text-align: center;
+            padding: 6rem 0;
+            background: var(--primary-black);
+            position: relative;
+        }
+
+        .cta::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 100px;
+            background: linear-gradient(180deg, var(--tertiary-black) 0%, var(--primary-black) 100%);
         }
 
         .cta-container {
             max-width: 800px;
             margin: 0 auto;
             padding: 0 2rem;
+            text-align: center;
         }
 
         .cta-title {
-            font-size: clamp(2rem, 5vw, 3rem);
-            font-weight: 700;
+            font-size: clamp(2.5rem, 6vw, 4rem);
+            font-weight: 800;
             margin-bottom: 1rem;
+            background: linear-gradient(135deg, var(--pure-white) 0%, var(--electric-blue) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
         }
 
         .cta-subtitle {
             font-size: 1.2rem;
-            margin-bottom: 2rem;
-            opacity: 0.9;
+            color: var(--light-gray);
+            margin-bottom: 3rem;
+            line-height: 1.6;
         }
 
-        .cta-form {
-            max-width: 500px;
-            margin: 0 auto;
+        .cta-actions {
             display: flex;
             gap: 1rem;
+            justify-content: center;
             flex-wrap: wrap;
-        }
-
-        .cta-input {
-            flex: 1;
-            min-width: 250px;
-            padding: 1rem;
-            border: none;
-            border-radius: 50px;
-            font-size: 1rem;
-        }
-
-        .cta-submit {
-            background: var(--accent);
-            color: white;
-            padding: 1rem 2rem;
-            border: none;
-            border-radius: 50px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.3s ease;
-        }
-
-        .cta-submit:hover {
-            background: #d97706;
-            transform: translateY(-2px);
         }
 
         /* Footer */
         .footer {
-            background: var(--dark);
-            color: white;
-            padding: 3rem 0 1rem;
+            background: var(--secondary-black);
+            border-top: 1px solid var(--glass-border);
+            padding: 3rem 0 2rem;
         }
 
         .footer-container {
-            max-width: 1200px;
+            max-width: 1400px;
             margin: 0 auto;
             padding: 0 2rem;
         }
@@ -436,14 +665,15 @@
         .footer-grid {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-            gap: 2rem;
-            margin-bottom: 2rem;
+            gap: 3rem;
+            margin-bottom: 3rem;
         }
 
         .footer-section h3 {
-            color: white;
+            color: var(--pure-white);
+            font-weight: 600;
             margin-bottom: 1rem;
-            font-size: 1.2rem;
+            font-size: 1.1rem;
         }
 
         .footer-links {
@@ -451,24 +681,57 @@
         }
 
         .footer-links li {
-            margin-bottom: 0.5rem;
+            margin-bottom: 0.75rem;
         }
 
         .footer-links a {
-            color: var(--gray-300);
+            color: var(--light-gray);
             text-decoration: none;
             transition: color 0.3s ease;
         }
 
         .footer-links a:hover {
-            color: var(--secondary);
+            color: var(--electric-blue);
         }
 
         .footer-bottom {
-            border-top: 1px solid var(--gray-800);
+            border-top: 1px solid var(--glass-border);
             padding-top: 2rem;
-            text-align: center;
-            color: var(--gray-400);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 1rem;
+        }
+
+        .footer-copy {
+            color: var(--medium-gray);
+            font-size: 0.9rem;
+        }
+
+        .footer-social {
+            display: flex;
+            gap: 1rem;
+        }
+
+        .social-link {
+            width: 40px;
+            height: 40px;
+            background: var(--glass-primary);
+            border: 1px solid var(--glass-border);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--light-gray);
+            text-decoration: none;
+            transition: all 0.3s ease;
+        }
+
+        .social-link:hover {
+            background: var(--primary-blue);
+            color: var(--pure-white);
+            transform: translateY(-2px);
         }
 
         /* Animations */
@@ -483,7 +746,18 @@
             }
         }
 
-        /* Responsive */
+        .animate-on-scroll {
+            opacity: 0;
+            transform: translateY(30px);
+            transition: all 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .animate-on-scroll.animate {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        /* Responsive Design */
         @media (max-width: 768px) {
             .nav-container {
                 padding: 1rem;
@@ -493,150 +767,129 @@
                 display: none;
             }
 
-            .hero-buttons {
+            .hero-actions {
                 flex-direction: column;
-                align-items: center;
+                align-items: flex-start;
+            }
+
+            .hero-stats {
+                grid-template-columns: repeat(2, 1fr);
+            }
+
+            .services-grid {
+                grid-template-columns: 1fr;
             }
 
             .features-grid {
                 grid-template-columns: 1fr;
             }
 
-            .stats-grid {
-                grid-template-columns: repeat(2, 1fr);
-            }
-
-            .cta-form {
+            .cta-actions {
                 flex-direction: column;
+                align-items: center;
             }
 
-            .footer-grid {
-                grid-template-columns: 1fr;
+            .footer-bottom {
+                flex-direction: column;
                 text-align: center;
             }
         }
 
-        /* Scroll animations */
-        .animate-on-scroll {
-            opacity: 0;
-            transform: translateY(30px);
-            transition: all 0.6s ease;
+        @media (max-width: 480px) {
+            .service-card,
+            .feature-card {
+                padding: 1.5rem;
+            }
+
+            .services-grid {
+                grid-template-columns: 1fr;
+                gap: 1rem;
+            }
         }
 
-        .animate-on-scroll.animate {
-            opacity: 1;
-            transform: translateY(0);
+        /* Mobile Navigation */
+        .mobile-menu-btn {
+            display: none;
+            background: none;
+            border: none;
+            color: var(--pure-white);
+            font-size: 1.5rem;
+            cursor: pointer;
+        }
+
+        @media (max-width: 768px) {
+            .mobile-menu-btn {
+                display: block;
+            }
         }
     </style>
 </head>
 <body>
     <!-- Navigation -->
-    <nav class="navbar">
+    <nav class="navbar" id="navbar">
         <div class="nav-container">
             <div class="logo">Flopro WA</div>
+            
             <ul class="nav-links">
+                <li><a href="#services">Services</a></li>
                 <li><a href="#features">Features</a></li>
-                <li><a href="#pricing">Pricing</a></li>
                 <li><a href="#about">About</a></li>
                 <li><a href="#contact">Contact</a></li>
             </ul>
-            <a href="#" class="cta-nav">Get Started</a>
+            
+            <div class="nav-actions">
+                {% if user.is_authenticated %}
+                    <a href="{% url 'core:dashboard' %}" class="btn btn-primary">
+                        <i class="fas fa-tachometer-alt"></i>
+                        Dashboard
+                    </a>
+                {% else %}
+                    <a href="{% url 'login' %}" class="btn btn-ghost">Sign In</a>
+                    <a href="{% url 'core:signup' %}" class="btn btn-primary">Get Started</a>
+                {% endif %}
+            </div>
+            
+            <button class="mobile-menu-btn">
+                <i class="fas fa-bars"></i>
+            </button>
         </div>
     </nav>
 
     <!-- Hero Section -->
     <section class="hero">
+        <div class="hero-grid"></div>
         <div class="hero-content">
-            <h1 class="hero-title">Revolutionary Workflow Automation</h1>
+            <div class="hero-badge">
+                <i class="fas fa-rocket"></i>
+                <span>Next-Generation Automation Platform</span>
+            </div>
+            
+            <h1 class="hero-title">Workflow Automation<br>Reimagined</h1>
+            
             <p class="hero-subtitle">
-                Transform your business processes with intelligent automation, real-time collaboration,
-                and powerful analytics that scale with your success.
+                Transform your business processes with intelligent automation that adapts, learns, and scales. 
+                Connect your favorite tools, automate complex workflows, and unlock unprecedented productivity.
             </p>
-            <div class="hero-buttons">
-                <a href="#" class="btn-primary">Start Free Trial</a>
-                <a href="#" class="btn-secondary">Watch Demo</a>
+            
+            <div class="hero-actions">
+                {% if user.is_authenticated %}
+                    <a href="{% url 'core:dashboard' %}" class="btn-hero-primary">
+                        <i class="fas fa-tachometer-alt"></i>
+                        Go to Dashboard
+                    </a>
+                {% else %}
+                    <a href="{% url 'core:signup' %}" class="btn-hero-primary">
+                        <i class="fas fa-rocket"></i>
+                        Start Free Trial
+                    </a>
+                    <a href="#services" class="btn-hero-secondary">
+                        <i class="fas fa-play"></i>
+                        Explore Services
+                    </a>
+                {% endif %}
             </div>
-        </div>
-    </section>
-
-    <!-- Features Section -->
-    <section class="features" id="features">
-        <div class="features-container">
-            <div class="features-header">
-                <h2 class="features-title">Powerful Features for Modern Teams</h2>
-                <p class="features-subtitle">
-                    Everything you need to streamline workflows, boost productivity, and drive growth.
-                </p>
-            </div>
-            <div class="features-grid">
-                <div class="feature-card animate-on-scroll">
-                    <div class="feature-icon">
-                        <i class="fas fa-robot"></i>
-                    </div>
-                    <h3 class="feature-title">Smart Automation</h3>
-                    <p class="feature-description">
-                        Intelligent workflow automation that learns from your processes and optimizes
-                        performance in real-time.
-                    </p>
-                </div>
-                <div class="feature-card animate-on-scroll">
-                    <div class="feature-icon">
-                        <i class="fas fa-users"></i>
-                    </div>
-                    <h3 class="feature-title">Team Collaboration</h3>
-                    <p class="feature-description">
-                        Seamless real-time collaboration tools that keep your team connected and
-                        productive from anywhere.
-                    </p>
-                </div>
-                <div class="feature-card animate-on-scroll">
-                    <div class="feature-icon">
-                        <i class="fas fa-chart-line"></i>
-                    </div>
-                    <h3 class="feature-title">Advanced Analytics</h3>
-                    <p class="feature-description">
-                        Deep insights into your workflows with comprehensive analytics and
-                        actionable performance metrics.
-                    </p>
-                </div>
-                <div class="feature-card animate-on-scroll">
-                    <div class="feature-icon">
-                        <i class="fas fa-plug"></i>
-                    </div>
-                    <h3 class="feature-title">Seamless Integration</h3>
-                    <p class="feature-description">
-                        Connect with your favorite tools and platforms through our extensive
-                        integration ecosystem.
-                    </p>
-                </div>
-                <div class="feature-card animate-on-scroll">
-                    <div class="feature-icon">
-                        <i class="fas fa-shield-alt"></i>
-                    </div>
-                    <h3 class="feature-title">Enterprise Security</h3>
-                    <p class="feature-description">
-                        Bank-level security with end-to-end encryption, compliance certifications,
-                        and advanced access controls.
-                    </p>
-                </div>
-                <div class="feature-card animate-on-scroll">
-                    <div class="feature-icon">
-                        <i class="fas fa-mobile-alt"></i>
-                    </div>
-                    <h3 class="feature-title">Mobile First</h3>
-                    <p class="feature-description">
-                        Full-featured mobile apps that let you manage workflows on-the-go with
-                        the same powerful features.
-                    </p>
-                </div>
-            </div>
-        </div>
-    </section>
-
-    <!-- Stats Section -->
-    <section class="stats">
-        <div class="stats-container">
-            <div class="stats-grid">
+            
+            <div class="hero-stats">
                 <div class="stat-item">
                     <div class="stat-number">10M+</div>
                     <div class="stat-label">Tasks Automated</div>
@@ -657,46 +910,208 @@
         </div>
     </section>
 
+    <!-- Services Section -->
+    <section class="services" id="services">
+        <div class="services-container">
+            <div class="section-header">
+                <div class="section-badge">
+                    <i class="fas fa-cogs"></i>
+                    <span>Automation Services</span>
+                </div>
+                <h2 class="section-title">Powerful Services at Your Fingertips</h2>
+                <p class="section-subtitle">
+                    Unlock professional-grade automation workflows tailored to your specific needs. 
+                    Each service is designed to integrate seamlessly with your existing tools and processes.
+                </p>
+            </div>
+            
+            <div class="services-grid">
+                {% for service in services %}
+                <div class="service-card animate-on-scroll">
+                    <div class="service-icon">
+                        <i class="{{ service.icon|default:'fas fa-cogs' }}"></i>
+                    </div>
+                    <h3 class="service-title">{{ service.name }}</h3>
+                    <p class="service-description">{{ service.description }}</p>
+                    {% if user.is_authenticated %}
+                        <a href="{% url 'core:service_detail' service.slug %}" class="service-btn">
+                            <i class="fas fa-unlock"></i>
+                            Unlock Service
+                        </a>
+                    {% else %}
+                        <a href="{% url 'core:signup' %}" class="service-btn">
+                            <i class="fas fa-user-plus"></i>
+                            Sign Up to Unlock
+                        </a>
+                    {% endif %}
+                </div>
+                {% empty %}
+                <div class="service-card animate-on-scroll">
+                    <div class="service-icon">
+                        <i class="fas fa-tools"></i>
+                    </div>
+                    <h3 class="service-title">More Services Coming Soon</h3>
+                    <p class="service-description">
+                        We're continuously developing new automation services to help streamline your workflow. 
+                        Stay tuned for exciting updates and powerful new integrations.
+                    </p>
+                    <a href="{% url 'core:signup' %}" class="service-btn">
+                        <i class="fas fa-bell"></i>
+                        Get Notified
+                    </a>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </section>
+
+    <!-- Features Section -->
+    <section class="features" id="features">
+        <div class="services-container">
+            <div class="section-header">
+                <div class="section-badge">
+                    <i class="fas fa-star"></i>
+                    <span>Core Features</span>
+                </div>
+                <h2 class="section-title">Built for Modern Teams</h2>
+                <p class="section-subtitle">
+                    Everything you need to create, deploy, and manage sophisticated automation workflows 
+                    that scale with your business.
+                </p>
+            </div>
+            
+            <div class="features-grid">
+                <div class="feature-card animate-on-scroll">
+                    <div class="feature-icon">
+                        <i class="fas fa-brain"></i>
+                    </div>
+                    <h3 class="feature-title">AI-Powered Intelligence</h3>
+                    <p class="feature-description">
+                        Smart automation that learns from your patterns and optimizes workflows in real-time 
+                        for maximum efficiency and reliability.
+                    </p>
+                </div>
+                
+                <div class="feature-card animate-on-scroll">
+                    <div class="feature-icon">
+                        <i class="fas fa-shield-alt"></i>
+                    </div>
+                    <h3 class="feature-title">Enterprise Security</h3>
+                    <p class="feature-description">
+                        Bank-level encryption, SOC 2 compliance, and advanced access controls ensure 
+                        your data and workflows remain secure.
+                    </p>
+                </div>
+                
+                <div class="feature-card animate-on-scroll">
+                    <div class="feature-icon">
+                        <i class="fas fa-plug"></i>
+                    </div>
+                    <h3 class="feature-title">Universal Integrations</h3>
+                    <p class="feature-description">
+                        Connect with 500+ apps and services through our extensive integration ecosystem 
+                        and powerful API framework.
+                    </p>
+                </div>
+                
+                <div class="feature-card animate-on-scroll">
+                    <div class="feature-icon">
+                        <i class="fas fa-chart-line"></i>
+                    </div>
+                    <h3 class="feature-title">Advanced Analytics</h3>
+                    <p class="feature-description">
+                        Deep insights into workflow performance with real-time monitoring, 
+                        detailed reports, and predictive analytics.
+                    </p>
+                </div>
+                
+                <div class="feature-card animate-on-scroll">
+                    <div class="feature-icon">
+                        <i class="fas fa-users"></i>
+                    </div>
+                    <h3 class="feature-title">Team Collaboration</h3>
+                    <p class="feature-description">
+                        Built-in collaboration tools, role-based permissions, and shared workspaces 
+                        keep your team aligned and productive.
+                    </p>
+                </div>
+                
+                <div class="feature-card animate-on-scroll">
+                    <div class="feature-icon">
+                        <i class="fas fa-mobile-alt"></i>
+                    </div>
+                    <h3 class="feature-title">Mobile-First Design</h3>
+                    <p class="feature-description">
+                        Full-featured mobile apps let you monitor and manage workflows on-the-go 
+                        with the same powerful capabilities.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </section>
+
     <!-- CTA Section -->
-    <section class="cta">
+    <section class="cta" id="contact">
         <div class="cta-container">
             <h2 class="cta-title">Ready to Transform Your Workflow?</h2>
             <p class="cta-subtitle">
-                Join thousands of teams already using Flopro WA to streamline their processes.
+                Join thousands of teams already using Flopro WA to automate their processes, 
+                increase productivity, and focus on what matters most.
             </p>
-            <form class="cta-form">
-                <input type="email" placeholder="Enter your email address" class="cta-input" required>
-                <button type="submit" class="cta-submit">Get Started Free</button>
-            </form>
+            <div class="cta-actions">
+                {% if user.is_authenticated %}
+                    <a href="{% url 'core:dashboard' %}" class="btn-hero-primary">
+                        <i class="fas fa-tachometer-alt"></i>
+                        Go to Dashboard
+                    </a>
+                {% else %}
+                    <a href="{% url 'core:signup' %}" class="btn-hero-primary">
+                        <i class="fas fa-rocket"></i>
+                        Start Free Trial
+                    </a>
+                    <a href="#services" class="btn-hero-secondary">
+                        <i class="fas fa-info-circle"></i>
+                        Learn More
+                    </a>
+                {% endif %}
+            </div>
         </div>
     </section>
 
     <!-- Footer -->
-    <footer class="footer">
+    <footer class="footer" id="about">
         <div class="footer-container">
             <div class="footer-grid">
                 <div class="footer-section">
                     <h3>Flopro WA</h3>
-                    <p>Revolutionary workflow automation platform for modern teams.</p>
+                    <p style="color: var(--light-gray); line-height: 1.6;">
+                        Next-generation workflow automation platform designed for modern teams. 
+                        Streamline processes, boost productivity, and scale with confidence.
+                    </p>
                 </div>
+                
                 <div class="footer-section">
                     <h3>Product</h3>
                     <ul class="footer-links">
-                        <li><a href="#">Features</a></li>
-                        <li><a href="#">Pricing</a></li>
+                        <li><a href="#features">Features</a></li>
+                        <li><a href="#services">Services</a></li>
                         <li><a href="#">Integrations</a></li>
                         <li><a href="#">API</a></li>
+                        <li><a href="#">Security</a></li>
                     </ul>
                 </div>
+                
                 <div class="footer-section">
                     <h3>Company</h3>
                     <ul class="footer-links">
                         <li><a href="#">About</a></li>
                         <li><a href="#">Careers</a></li>
-                        <li><a href="#">Contact</a></li>
+                        <li><a href="#">Press</a></li>
                         <li><a href="#">Blog</a></li>
+                        <li><a href="#">Partners</a></li>
                     </ul>
                 </div>
+                
                 <div class="footer-section">
                     <h3>Support</h3>
                     <ul class="footer-links">
@@ -704,45 +1119,27 @@
                         <li><a href="#">Documentation</a></li>
                         <li><a href="#">Community</a></li>
                         <li><a href="#">Status</a></li>
+                        <li><a href="#">Contact</a></li>
                     </ul>
                 </div>
             </div>
+            
             <div class="footer-bottom">
-                <p>&copy; 2024 Flopro WA. All rights reserved.</p>
+                <div class="footer-copy">
+                    © 2024 Flopro WA. All rights reserved.
+                </div>
+                <div class="footer-social">
+                    <a href="#" class="social-link"><i class="fab fa-twitter"></i></a>
+                    <a href="#" class="social-link"><i class="fab fa-linkedin"></i></a>
+                    <a href="#" class="social-link"><i class="fab fa-github"></i></a>
+                    <a href="#" class="social-link"><i class="fab fa-discord"></i></a>
+                </div>
             </div>
         </div>
     </footer>
 
     <script>
-        // Navbar scroll effect
-        window.addEventListener('scroll', function() {
-            const navbar = document.querySelector('.navbar');
-            if (window.scrollY > 50) {
-                navbar.classList.add('scrolled');
-            } else {
-                navbar.classList.remove('scrolled');
-            }
-        });
-
-        // Animate on scroll
-        const observerOptions = {
-            threshold: 0.1,
-            rootMargin: '0px 0px -50px 0px'
-        };
-
-        const observer = new IntersectionObserver(function(entries) {
-            entries.forEach(entry => {
-                if (entry.isIntersecting) {
-                    entry.target.classList.add('animate');
-                }
-            });
-        }, observerOptions);
-
-        document.querySelectorAll('.animate-on-scroll').forEach(el => {
-            observer.observe(el);
-        });
-
-        // Smooth scrolling for navigation
+        // Smooth scrolling
         document.querySelectorAll('a[href^="#"]').forEach(anchor => {
             anchor.addEventListener('click', function (e) {
                 e.preventDefault();
@@ -756,12 +1153,42 @@
             });
         });
 
-        // CTA form submission
-        document.querySelector('.cta-form').addEventListener('submit', function(e) {
-            e.preventDefault();
-            const email = this.querySelector('.cta-input').value;
-            alert(`Thank you! We'll send a demo link to ${email}`);
-            this.reset();
+        // Navbar scroll effect
+        window.addEventListener('scroll', () => {
+            const navbar = document.getElementById('navbar');
+            if (window.scrollY > 50) {
+                navbar.classList.add('scrolled');
+            } else {
+                navbar.classList.remove('scrolled');
+            }
+        });
+
+        // Intersection Observer for animations
+        const observerOptions = {
+            threshold: 0.1,
+            rootMargin: '0px 0px -50px 0px'
+        };
+
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.classList.add('animate');
+                }
+            });
+        }, observerOptions);
+
+        document.querySelectorAll('.animate-on-scroll').forEach(el => {
+            observer.observe(el);
+        });
+
+        // Parallax effect for hero background
+        window.addEventListener('scroll', () => {
+            const scrolled = window.pageYOffset;
+            const rate = scrolled * -0.5;
+            const heroGrid = document.querySelector('.hero-grid');
+            if (heroGrid) {
+                heroGrid.style.transform = `translateY(${rate}px)`;
+            }
         });
     </script>
 </body>

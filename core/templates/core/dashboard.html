@@ -1,0 +1,856 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard - Flopro WA</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            /* Core Colors */
+            --primary-black: #0a0a0b;
+            --secondary-black: #1a1a1d;
+            --tertiary-black: #2d2d30;
+            --quaternary-black: #404043;
+            
+            --primary-blue: #0066ff;
+            --secondary-blue: #0052cc;
+            --tertiary-blue: #004db3;
+            --electric-blue: #00d4ff;
+            --neon-blue: #4dabf7;
+            
+            --pure-white: #ffffff;
+            --off-white: #f8f9fa;
+            --light-gray: #e9ecef;
+            --medium-gray: #6c757d;
+            --dark-gray: #495057;
+            
+            --success-green: #2ed573;
+            --warning-yellow: #ffa502;
+            --error-red: #ff4757;
+            --info-cyan: #3742fa;
+            
+            /* Gradients */
+            --gradient-primary: linear-gradient(135deg, var(--primary-blue) 0%, var(--electric-blue) 100%);
+            --gradient-secondary: linear-gradient(135deg, var(--secondary-black) 0%, var(--tertiary-black) 100%);
+            --gradient-hero: linear-gradient(135deg, var(--primary-black) 0%, var(--secondary-black) 50%, var(--tertiary-black) 100%);
+            
+            /* Glassmorphism */
+            --glass-primary: rgba(255, 255, 255, 0.1);
+            --glass-secondary: rgba(0, 102, 255, 0.1);
+            --glass-border: rgba(255, 255, 255, 0.2);
+            --glass-dark: rgba(0, 0, 0, 0.2);
+            
+            /* Shadows */
+            --shadow-soft: 0 4px 20px rgba(0, 0, 0, 0.1);
+            --shadow-medium: 0 8px 30px rgba(0, 0, 0, 0.15);
+            --shadow-hard: 0 12px 40px rgba(0, 0, 0, 0.2);
+            --shadow-glow: 0 0 30px rgba(0, 102, 255, 0.3);
+            --shadow-blue: 0 8px 32px rgba(0, 102, 255, 0.2);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            line-height: 1.6;
+            color: var(--pure-white);
+            background: var(--gradient-hero);
+            min-height: 100vh;
+            position: relative;
+        }
+
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: 
+                radial-gradient(circle at 20% 50%, rgba(0, 102, 255, 0.05) 0%, transparent 50%),
+                radial-gradient(circle at 80% 20%, rgba(0, 212, 255, 0.05) 0%, transparent 50%);
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        .grid-background {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-image: 
+                linear-gradient(rgba(255, 255, 255, 0.02) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(255, 255, 255, 0.02) 1px, transparent 1px);
+            background-size: 50px 50px;
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        /* Navigation */
+        .navbar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            background: rgba(10, 10, 11, 0.95);
+            backdrop-filter: blur(20px) saturate(180%);
+            border-bottom: 1px solid var(--glass-border);
+            z-index: 1000;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .nav-container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 1rem 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo {
+            font-size: 1.75rem;
+            font-weight: 800;
+            background: var(--gradient-primary);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            letter-spacing: -0.5px;
+        }
+
+        .nav-actions {
+            display: flex;
+            align-items: center;
+            gap: 1.5rem;
+        }
+
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            color: var(--light-gray);
+            font-weight: 500;
+        }
+
+        .user-avatar {
+            width: 40px;
+            height: 40px;
+            background: var(--gradient-primary);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 600;
+            color: var(--pure-white);
+        }
+
+        .logout-btn {
+            background: var(--glass-primary);
+            border: 1px solid var(--glass-border);
+            color: var(--light-gray);
+            padding: 0.5rem 1rem;
+            border-radius: 8px;
+            text-decoration: none;
+            font-size: 0.9rem;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            backdrop-filter: blur(10px);
+        }
+
+        .logout-btn:hover {
+            background: var(--error-red);
+            border-color: var(--error-red);
+            color: var(--pure-white);
+            transform: translateY(-1px);
+        }
+
+        /* Dashboard */
+        .dashboard {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 6rem 2rem 2rem;
+            position: relative;
+            z-index: 1;
+        }
+
+        .dashboard-header {
+            margin-bottom: 3rem;
+        }
+
+        .welcome-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            background: var(--glass-secondary);
+            border: 1px solid var(--primary-blue);
+            border-radius: 50px;
+            padding: 0.5rem 1rem;
+            font-size: 0.85rem;
+            font-weight: 500;
+            margin-bottom: 1rem;
+            backdrop-filter: blur(10px);
+            color: var(--electric-blue);
+        }
+
+        .dashboard-title {
+            font-size: clamp(2rem, 5vw, 3rem);
+            font-weight: 800;
+            margin-bottom: 0.5rem;
+            background: linear-gradient(135deg, var(--pure-white) 0%, var(--electric-blue) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            letter-spacing: -1px;
+        }
+
+        .dashboard-subtitle {
+            color: var(--light-gray);
+            font-size: 1.1rem;
+            font-weight: 400;
+        }
+
+        /* Active Service Hero */
+        .active-service {
+            background: var(--glass-primary);
+            border: 1px solid var(--glass-border);
+            border-radius: 20px;
+            padding: 2.5rem;
+            margin-bottom: 3rem;
+            backdrop-filter: blur(20px);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .active-service::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: var(--gradient-primary);
+        }
+
+        .active-service-header {
+            display: flex;
+            align-items: center;
+            gap: 1.5rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .active-service-icon {
+            width: 70px;
+            height: 70px;
+            background: var(--gradient-primary);
+            border-radius: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.75rem;
+            color: var(--pure-white);
+            box-shadow: var(--shadow-blue);
+        }
+
+        .active-service-info h2 {
+            font-size: 1.75rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+            color: var(--pure-white);
+        }
+
+        .active-service-status {
+            background: var(--success-green);
+            color: var(--pure-white);
+            padding: 0.25rem 0.75rem;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.25rem;
+        }
+
+        .active-service-description {
+            color: var(--light-gray);
+            line-height: 1.6;
+            font-size: 1rem;
+        }
+
+        /* Services Grid */
+        .services-section {
+            margin-bottom: 3rem;
+        }
+
+        .section-header {
+            margin-bottom: 2rem;
+        }
+
+        .section-title {
+            font-size: 1.75rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+            color: var(--pure-white);
+            letter-spacing: -0.5px;
+        }
+
+        .section-subtitle {
+            color: var(--light-gray);
+            font-size: 1rem;
+        }
+
+        .services-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 1.5rem;
+        }
+
+        .service-card {
+            background: var(--glass-primary);
+            border: 1px solid var(--glass-border);
+            border-radius: 16px;
+            padding: 2rem;
+            backdrop-filter: blur(20px);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .service-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 2px;
+            background: var(--gradient-primary);
+            transform: scaleX(0);
+            transition: transform 0.3s ease;
+        }
+
+        .service-card:hover {
+            transform: translateY(-5px);
+            background: rgba(255, 255, 255, 0.15);
+            border-color: var(--primary-blue);
+            box-shadow: var(--shadow-glow);
+        }
+
+        .service-card:hover::before {
+            transform: scaleX(1);
+        }
+
+        .service-header {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .service-icon {
+            width: 50px;
+            height: 50px;
+            background: var(--gradient-primary);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--pure-white);
+            font-size: 1.25rem;
+        }
+
+        .service-info h3 {
+            font-size: 1.25rem;
+            font-weight: 600;
+            margin-bottom: 0.25rem;
+            color: var(--pure-white);
+        }
+
+        .service-status {
+            font-size: 0.8rem;
+            padding: 0.25rem 0.75rem;
+            border-radius: 12px;
+            font-weight: 500;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.25rem;
+        }
+
+        .status-unlocked {
+            background: var(--success-green);
+            color: var(--pure-white);
+        }
+
+        .status-locked {
+            background: var(--glass-dark);
+            color: var(--medium-gray);
+        }
+
+        .status-active {
+            background: var(--gradient-primary);
+            color: var(--pure-white);
+        }
+
+        .service-description {
+            color: var(--light-gray);
+            font-size: 0.95rem;
+            margin-bottom: 2rem;
+            line-height: 1.6;
+        }
+
+        .service-actions {
+            display: flex;
+            gap: 0.75rem;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            padding: 0.75rem 1.5rem;
+            border: none;
+            border-radius: 10px;
+            text-decoration: none;
+            font-size: 0.9rem;
+            font-weight: 600;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-family: inherit;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .btn-primary {
+            background: var(--gradient-primary);
+            color: var(--pure-white);
+            box-shadow: var(--shadow-blue);
+        }
+
+        .btn-primary::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+            transition: left 0.5s ease;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 12px 40px rgba(0, 102, 255, 0.4);
+        }
+
+        .btn-primary:hover::before {
+            left: 100%;
+        }
+
+        .btn-secondary {
+            background: var(--glass-primary);
+            border: 1px solid var(--glass-border);
+            color: var(--light-gray);
+            backdrop-filter: blur(10px);
+        }
+
+        .btn-secondary:hover {
+            background: var(--glass-secondary);
+            border-color: var(--primary-blue);
+            color: var(--pure-white);
+            transform: translateY(-1px);
+        }
+
+        .btn-success {
+            background: var(--success-green);
+            color: var(--pure-white);
+        }
+
+        .btn-success:hover {
+            background: #27ae60;
+            transform: translateY(-1px);
+        }
+
+        /* Empty State */
+        .empty-state {
+            text-align: center;
+            padding: 4rem 2rem;
+            background: var(--glass-primary);
+            border: 1px solid var(--glass-border);
+            border-radius: 16px;
+            backdrop-filter: blur(20px);
+        }
+
+        .empty-state-icon {
+            font-size: 3rem;
+            margin-bottom: 1.5rem;
+            color: var(--medium-gray);
+        }
+
+        .empty-state-title {
+            font-size: 1.5rem;
+            font-weight: 600;
+            margin-bottom: 0.75rem;
+            color: var(--pure-white);
+        }
+
+        .empty-state-text {
+            color: var(--light-gray);
+            margin-bottom: 2rem;
+            line-height: 1.6;
+        }
+
+        /* Messages */
+        .messages {
+            position: fixed;
+            top: 100px;
+            right: 2rem;
+            z-index: 1000;
+            max-width: 400px;
+        }
+
+        .message {
+            background: var(--glass-primary);
+            border: 1px solid var(--glass-border);
+            padding: 1rem;
+            border-radius: 12px;
+            box-shadow: var(--shadow-medium);
+            margin-bottom: 1rem;
+            border-left: 4px solid var(--success-green);
+            animation: slideIn 0.3s ease;
+            backdrop-filter: blur(20px);
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .message.error {
+            border-left-color: var(--error-red);
+        }
+
+        .message.warning {
+            border-left-color: var(--warning-yellow);
+        }
+
+        @keyframes slideIn {
+            from {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+
+        /* Stats Cards */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 3rem;
+        }
+
+        .stat-card {
+            background: var(--glass-primary);
+            border: 1px solid var(--glass-border);
+            border-radius: 16px;
+            padding: 1.5rem;
+            backdrop-filter: blur(20px);
+            text-align: center;
+            transition: all 0.3s ease;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-3px);
+            background: rgba(255, 255, 255, 0.15);
+        }
+
+        .stat-number {
+            font-size: 2rem;
+            font-weight: 800;
+            background: var(--gradient-primary);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 0.5rem;
+        }
+
+        .stat-label {
+            color: var(--light-gray);
+            font-size: 0.9rem;
+            font-weight: 500;
+        }
+
+        /* Responsive Design */
+        @media (max-width: 768px) {
+            .dashboard {
+                padding: 6rem 1rem 2rem;
+            }
+
+            .services-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .stats-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+
+            .nav-container {
+                padding: 1rem;
+            }
+
+            .nav-actions {
+                flex-direction: column;
+                gap: 0.75rem;
+            }
+
+            .active-service {
+                padding: 1.5rem;
+            }
+
+            .active-service-header {
+                flex-direction: column;
+                text-align: center;
+            }
+
+            .messages {
+                right: 1rem;
+                left: 1rem;
+                max-width: none;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .service-card {
+                padding: 1.5rem;
+            }
+
+            .stats-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .service-actions {
+                flex-direction: column;
+            }
+
+            .btn {
+                justify-content: center;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="grid-background"></div>
+    
+    <!-- Navigation -->
+    <nav class="navbar">
+        <div class="nav-container">
+            <div class="logo">Flopro WA</div>
+            <div class="nav-actions">
+                <div class="user-info">
+                    <div class="user-avatar">
+                        {{ user.username|first|upper }}
+                    </div>
+                    <span>{{ user.username }}</span>
+                </div>
+                <a href="{% url 'core:logout' %}" class="logout-btn">
+                    <i class="fas fa-sign-out-alt"></i>
+                    Logout
+                </a>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Messages -->
+    {% if messages %}
+    <div class="messages">
+        {% for message in messages %}
+        <div class="message {% if message.tags %}{{ message.tags }}{% endif %}">
+            <i class="fas fa-{% if 'error' in message.tags %}exclamation-triangle{% elif 'warning' in message.tags %}exclamation-circle{% else %}check-circle{% endif %}"></i>
+            {{ message }}
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+    <!-- Dashboard -->
+    <div class="dashboard">
+        <div class="dashboard-header">
+            <div class="welcome-badge">
+                <i class="fas fa-tachometer-alt"></i>
+                <span>Automation Dashboard</span>
+            </div>
+            <h1 class="dashboard-title">Welcome back, {{ user.username }}!</h1>
+            <p class="dashboard-subtitle">Manage your automated workflows and unlock new services</p>
+        </div>
+
+        <!-- Quick Stats -->
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-number">{{ user_workflows|length }}</div>
+                <div class="stat-label">Active Services</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number">{{ services|length }}</div>
+                <div class="stat-label">Available Services</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number">99.9%</div>
+                <div class="stat-label">Uptime</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number">24/7</div>
+                <div class="stat-label">Monitoring</div>
+            </div>
+        </div>
+
+        <!-- Active Service -->
+        {% if active_service %}
+        <div class="active-service">
+            <div class="active-service-header">
+                <div class="active-service-icon">
+                    <i class="{{ active_service.icon|default:'fas fa-cogs' }}"></i>
+                </div>
+                <div class="active-service-info">
+                    <h2>{{ active_service.name }}</h2>
+                    <span class="active-service-status">
+                        <i class="fas fa-play"></i>
+                        Currently Active
+                    </span>
+                </div>
+            </div>
+            <p class="active-service-description">{{ active_service.description }}</p>
+        </div>
+        {% endif %}
+
+        <!-- Available Services -->
+        <div class="services-section">
+            <div class="section-header">
+                <h2 class="section-title">Your Services</h2>
+                <p class="section-subtitle">Manage and unlock powerful automation workflows</p>
+            </div>
+            
+            {% if services %}
+            <div class="services-grid">
+                {% for service in services %}
+                <div class="service-card">
+                    <div class="service-header">
+                        <div class="service-icon">
+                            <i class="{{ service.icon|default:'fas fa-cogs' }}"></i>
+                        </div>
+                        <div class="service-info">
+                            <h3>{{ service.name }}</h3>
+                            {% with user_workflows|dictsort:"service.name" as sorted_workflows %}
+                                {% for uw in sorted_workflows %}
+                                    {% if uw.service == service %}
+                                        {% if service == active_service %}
+                                            <span class="service-status status-active">
+                                                <i class="fas fa-play"></i>
+                                                Active
+                                            </span>
+                                        {% else %}
+                                            <span class="service-status status-unlocked">
+                                                <i class="fas fa-check"></i>
+                                                Unlocked
+                                            </span>
+                                        {% endif %}
+                                    {% endif %}
+                                {% empty %}
+                                    <span class="service-status status-locked">
+                                        <i class="fas fa-lock"></i>
+                                        Locked
+                                    </span>
+                                {% endfor %}
+                            {% endwith %}
+                        </div>
+                    </div>
+                    <p class="service-description">{{ service.description }}</p>
+                    <div class="service-actions">
+                        {% with user_workflows|dictsort:"service.name" as sorted_workflows %}
+                            {% for uw in sorted_workflows %}
+                                {% if uw.service == service %}
+                                    {% if service == active_service %}
+                                        <span class="btn btn-success">
+                                            <i class="fas fa-check"></i>
+                                            Currently Active
+                                        </span>
+                                    {% else %}
+                                        <form method="post" action="{% url 'core:toggle_service' service.slug %}" style="display: inline;">
+                                            {% csrf_token %}
+                                            <button type="submit" class="btn btn-primary">
+                                                <i class="fas fa-play"></i>
+                                                Activate
+                                            </button>
+                                        </form>
+                                    {% endif %}
+                                {% endif %}
+                            {% empty %}
+                                <a href="{% url 'core:service_detail' service.slug %}" class="btn btn-primary">
+                                    <i class="fas fa-unlock"></i>
+                                    Unlock Service
+                                </a>
+                            {% endfor %}
+                        {% endwith %}
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <div class="empty-state">
+                <div class="empty-state-icon">
+                    <i class="fas fa-tools"></i>
+                </div>
+                <h3 class="empty-state-title">No Services Available</h3>
+                <p class="empty-state-text">
+                    We're working on adding powerful automation services. Check back soon for exciting updates!
+                </p>
+                <a href="{% url 'core:landing_page' %}" class="btn btn-primary">
+                    <i class="fas fa-arrow-left"></i>
+                    Back to Home
+                </a>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <script>
+        // Auto-hide messages after 5 seconds
+        setTimeout(function() {
+            const messages = document.querySelectorAll('.message');
+            messages.forEach(function(message) {
+                message.style.animation = 'slideIn 0.3s ease reverse';
+                setTimeout(function() {
+                    message.remove();
+                }, 300);
+            });
+        }, 5000);
+
+        // Add smooth hover effects
+        document.querySelectorAll('.service-card').forEach(card => {
+            card.addEventListener('mouseenter', function() {
+                this.style.transform = 'translateY(-8px)';
+            });
+            
+            card.addEventListener('mouseleave', function() {
+                this.style.transform = 'translateY(-5px)';
+            });
+        });
+
+        // Parallax effect for background
+        window.addEventListener('scroll', () => {
+            const scrolled = window.pageYOffset;
+            const rate = scrolled * -0.2;
+            const background = document.querySelector('.grid-background');
+            if (background) {
+                background.style.transform = `translateY(${rate}px)`;
+            }
+        });
+    </script>
+</body>
+</html>

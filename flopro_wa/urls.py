@@ -17,7 +17,18 @@ Including another URLconf
 from django.contrib import admin
 from django.urls import path, include
 
+from core.views import login_view, logout_view
+
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('', include('core.urls')),
+    
+    # Custom auth URLs that override Django's defaults
+    path('accounts/login/', login_view, name='login'),
+    path('accounts/logout/', logout_view, name='logout'),
+    path('auth/login/', login_view, name='auth_login'),
+    path('auth/logout/', logout_view, name='auth_logout'),
+    
+    # Django's built-in auth URLs for other functionality (password reset, etc.)
+    path('auth/', include('django.contrib.auth.urls')),
 ]

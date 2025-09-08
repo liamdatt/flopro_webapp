@@ -1,5 +1,259 @@
-from django.shortcuts import render
+from django.shortcuts import render, redirect, get_object_or_404
+from django.contrib.auth.decorators import login_required
+from django.contrib.auth.forms import UserCreationForm
+from django.contrib.auth import login
+from django.contrib import messages
+from django.http import JsonResponse
+from django.views.decorators.http import require_POST
+from django.views.decorators.csrf import csrf_exempt
+from django import forms
+import json
+
+from .models import Service, UserWorkflow
+from .provisioning import provision_user_workflow, toggle_user_service, get_active_service
+
+
+class CustomUserCreationForm(UserCreationForm):
+    """Custom user creation form that includes phone number."""
+    phone_number = forms.CharField(
+        max_length=20,
+        required=False,
+        widget=forms.TextInput(attrs={'placeholder': 'Optional phone number'})
+    )
+
+    class Meta:
+        model = UserCreationForm.Meta.model
+        fields = UserCreationForm.Meta.fields + ('phone_number',)
+
+    def save(self, commit=True):
+        user = super().save(commit=False)
+        user.phone_number = self.cleaned_data.get('phone_number')
+        if commit:
+            user.save()
+        return user
+
 
 def landing_page(request):
     """Landing page view for the Flopro WA application."""
-    return render(request, 'core/landing_page.html')
+    if request.user.is_authenticated:
+        return redirect('dashboard')
+
+    services = Service.objects.filter(is_active=True)
+    return render(request, 'core/landing_page.html', {'services': services})
+
+
+def signup_view(request):
+    """User signup view."""
+    if request.user.is_authenticated:
+        return redirect('core:dashboard')
+
+    if request.method == 'POST':
+        form = CustomUserCreationForm(request.POST)
+        if form.is_valid():
+            user = form.save()
+            login(request, user)
+            messages.success(request, 'Account created successfully! Welcome to Flopro WA.')
+            return redirect('core:dashboard')
+        else:
+            messages.error(request, 'Please correct the errors below.')
+    else:
+        form = CustomUserCreationForm()
+
+    return render(request, 'registration/signup.html', {'form': form})
+
+
+def login_view(request):
+    """Custom login view to ensure proper redirect."""
+    if request.user.is_authenticated:
+        return redirect('core:dashboard')
+
+    from django.contrib.auth import authenticate, login as auth_login
+    from django.contrib.auth.forms import AuthenticationForm
+
+    if request.method == 'POST':
+        form = AuthenticationForm(request, data=request.POST)
+        if form.is_valid():
+            username = form.cleaned_data.get('username')
+            password = form.cleaned_data.get('password')
+            user = authenticate(username=username, password=password)
+            if user is not None:
+                auth_login(request, user)
+                messages.success(request, f'Welcome back, {user.username}!')
+                return redirect('core:dashboard')
+            else:
+                messages.error(request, 'Invalid username or password.')
+        else:
+            messages.error(request, 'Please correct the errors below.')
+    else:
+        form = AuthenticationForm()
+
+    return render(request, 'registration/login.html', {'form': form})
+
+
+def logout_view(request):
+    """Custom logout view to ensure proper redirect."""
+    from django.contrib.auth import logout
+    from django.shortcuts import redirect
+
+    logout(request)
+    return redirect('core:landing_page')
+
+
+@login_required
+def dashboard(request):
+    """User dashboard showing available services and active workflows."""
+    services = Service.objects.filter(is_active=True)
+    user_workflows = UserWorkflow.objects.filter(user=request.user).select_related('service')
+    active_service = get_active_service(request.user)
+
+    context = {
+        'services': services,
+        'user_workflows': user_workflows,
+        'active_service': active_service,
+    }
+    return render(request, 'core/dashboard.html', context)
+
+
+@login_required
+def service_detail(request, service_slug):
+    """Show service details and unlock form."""
+    service = get_object_or_404(Service, slug=service_slug, is_active=True)
+
+    # Check if user already has this service
+    try:
+        user_workflow = UserWorkflow.objects.get(user=request.user, service=service)
+        return redirect('dashboard')  # Already has this service
+    except UserWorkflow.DoesNotExist:
+        pass
+
+    if request.method == 'POST':
+        # Handle credential form submission
+        try:
+            if service.credential_type == 'googleOAuth2':
+                # For OAuth2, redirect to n8n for authorization
+                return handle_oauth_flow(request, service)
+            else:
+                # Handle other credential types
+                credential_data = extract_credential_data(request.POST, service)
+                workflow_id, credential_id = provision_user_workflow(
+                    user=request.user,
+                    service=service,
+                    credential_data=credential_data
+                )
+                messages.success(request, f"Successfully unlocked {service.name}!")
+                return redirect('dashboard')
+
+        except Exception as e:
+            messages.error(request, f"Failed to unlock service: {str(e)}")
+
+    context = {
+        'service': service,
+        'credential_schema': service.credential_ui_schema,
+    }
+    return render(request, 'core/service_detail.html', context)
+
+
+@login_required
+@require_POST
+def toggle_service(request, service_slug):
+    """Toggle between user services."""
+    service = get_object_or_404(Service, slug=service_slug, is_active=True)
+
+    if toggle_user_service(user=request.user, service=service):
+        messages.success(request, f"Switched to {service.name}")
+    else:
+        messages.error(request, f"You haven't unlocked {service.name} yet")
+
+    return redirect('dashboard')
+
+
+@login_required
+@require_POST
+def unlock_service(request, service_slug):
+    """AJAX endpoint to unlock a service."""
+    try:
+        service = get_object_or_404(Service, slug=service_slug, is_active=True)
+
+        # Check if user already has this service
+        if UserWorkflow.objects.filter(user=request.user, service=service).exists():
+            return JsonResponse({'success': False, 'error': 'Service already unlocked'})
+
+        # Extract credential data from POST
+        credential_data = extract_credential_data(request.POST, service)
+
+        # Provision the workflow
+        workflow_id, credential_id = provision_user_workflow(
+            user=request.user,
+            service=service,
+            credential_data=credential_data
+        )
+
+        return JsonResponse({
+            'success': True,
+            'message': f'Successfully unlocked {service.name}!',
+            'workflow_id': workflow_id,
+            'credential_id': credential_id
+        })
+
+    except Exception as e:
+        return JsonResponse({'success': False, 'error': str(e)})
+
+
+def handle_oauth_flow(request, service):
+    """Handle OAuth2 flow for services like Google Sheets."""
+    # For OAuth2 services, we need to initiate the OAuth flow through n8n
+    # This is a simplified implementation - in production you'd want to:
+    # 1. Create a temporary credential in n8n with the user's OAuth data
+    # 2. Redirect to n8n's OAuth authorization URL
+    # 3. Handle the callback and store the final credential ID
+
+    try:
+        client = N8nClient()
+
+        # For Google OAuth2, we'll create a credential and let n8n handle the OAuth flow
+        # In a real implementation, you'd redirect to n8n's OAuth endpoint
+        credential_data = extract_credential_data(request.POST, service)
+
+        # Create the workflow and credential (n8n will handle OAuth completion)
+        workflow_id, credential_id = provision_user_workflow(
+            user=request.user,
+            service=service,
+            credential_data=credential_data
+        )
+
+        messages.success(request, f"Successfully set up {service.name}! OAuth flow will complete through n8n.")
+        return redirect('dashboard')
+
+    except Exception as e:
+        messages.error(request, f"OAuth setup failed: {str(e)}")
+        return redirect('service_detail', service_slug=service.slug)
+
+
+def extract_credential_data(post_data, service):
+    """Extract credential data from POST data based on service schema."""
+    credential_data = {}
+
+    # This is a simple implementation - in production you'd want more validation
+    schema = service.credential_ui_schema
+
+    for field_name, field_config in schema.items():
+        if field_name in post_data:
+            credential_data[field_name] = post_data[field_name]
+
+    return credential_data
+
+
+# API endpoints for n8n webhooks (if needed)
+@csrf_exempt
+def n8n_webhook(request, workflow_id):
+    """Handle webhooks from n8n workflows."""
+    if request.method == 'POST':
+        try:
+            data = json.loads(request.body)
+            # Process webhook data
+            # This could trigger actions in your Django app
+            return JsonResponse({'status': 'received'})
+        except Exception as e:
+            return JsonResponse({'error': str(e)}, status=400)
+
+    return JsonResponse({'error': 'Method not allowed'}, status=405)

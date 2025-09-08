@@ -5,4 +5,5 @@ packaging==25.0
 sqlparse==0.5.3
 whitenoise==6.9.0
 psycopg2-binary>=2.9
+requests>=2.31.0
 

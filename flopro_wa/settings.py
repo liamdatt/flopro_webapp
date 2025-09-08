@@ -11,6 +11,10 @@ SECRET_KEY = os.environ.get('DJANGO_SECRET_KEY', 'dev-only-not-secure')
 
 DEBUG = os.environ.get('DJANGO_DEBUG', 'False').lower() == 'true'
 
+# ---- n8n Configuration ----
+N8N_API_BASE_URL = os.environ.get('N8N_API_BASE_URL', '')
+N8N_API_KEY = os.environ.get('N8N_API_KEY', '')
+
 # Accept hosts from env. In prod, set DJANGO_ALLOWED_HOSTS="app.example.com"
 ALLOWED_HOSTS = (
     os.environ.get('DJANGO_ALLOWED_HOSTS', '').split(',')
@@ -59,7 +63,7 @@ ROOT_URLCONF = 'flopro_wa.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [],
+        'DIRS': [BASE_DIR / 'templates'],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
@@ -123,3 +127,8 @@ MEDIA_URL = '/media/'
 MEDIA_ROOT = BASE_DIR / 'media'
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+# ---- Authentication URLs ----
+LOGIN_URL = '/accounts/login/'
+LOGIN_REDIRECT_URL = '/dashboard/'
+LOGOUT_REDIRECT_URL = '/'

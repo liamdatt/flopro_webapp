@@ -1,0 +1,463 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Unlock {{ service.name }} - Flopro WA</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #6366f1;
+            --primary-dark: #4f46e5;
+            --secondary: #06b6d4;
+            --accent: #f59e0b;
+            --dark: #0f172a;
+            --light: #f8fafc;
+            --gray-100: #f1f5f9;
+            --gray-200: #e2e8f0;
+            --gray-300: #cbd5e1;
+            --gray-800: #1e293b;
+            --success: #10b981;
+            --error: #ef4444;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            line-height: 1.6;
+            color: var(--gray-800);
+            background: var(--light);
+        }
+
+        /* Navigation */
+        .navbar {
+            background: white;
+            border-bottom: 1px solid var(--gray-200);
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+
+        .nav-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 1rem 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo {
+            font-size: 1.5rem;
+            font-weight: 700;
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .nav-actions {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .back-btn {
+            color: var(--gray-600);
+            text-decoration: none;
+            font-size: 0.9rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            transition: color 0.3s ease;
+        }
+
+        .back-btn:hover {
+            color: var(--primary);
+        }
+
+        /* Service Detail */
+        .service-detail {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        .service-header {
+            text-align: center;
+            margin-bottom: 3rem;
+        }
+
+        .service-icon-large {
+            width: 80px;
+            height: 80px;
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            border-radius: 20px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 2rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .service-title {
+            font-size: 2rem;
+            font-weight: 700;
+            margin-bottom: 1rem;
+            color: var(--dark);
+        }
+
+        .service-description {
+            color: var(--gray-600);
+            font-size: 1.1rem;
+            line-height: 1.6;
+            margin-bottom: 2rem;
+        }
+
+        /* Credential Form */
+        .credential-form {
+            background: white;
+            padding: 2rem;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+            border: 1px solid var(--gray-200);
+        }
+
+        .form-header {
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+
+        .form-title {
+            font-size: 1.5rem;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+            color: var(--dark);
+        }
+
+        .form-subtitle {
+            color: var(--gray-600);
+        }
+
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+
+        .form-label {
+            display: block;
+            font-weight: 500;
+            margin-bottom: 0.5rem;
+            color: var(--dark);
+        }
+
+        .form-input {
+            width: 100%;
+            padding: 0.75rem;
+            border: 2px solid var(--gray-200);
+            border-radius: 8px;
+            font-size: 1rem;
+            transition: border-color 0.3s ease;
+        }
+
+        .form-input:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+        }
+
+        .form-textarea {
+            min-height: 100px;
+            resize: vertical;
+        }
+
+        .form-help {
+            font-size: 0.8rem;
+            color: var(--gray-500);
+            margin-top: 0.25rem;
+        }
+
+        .form-actions {
+            display: flex;
+            gap: 1rem;
+            justify-content: center;
+            margin-top: 2rem;
+        }
+
+        .btn {
+            padding: 0.75rem 2rem;
+            border: none;
+            border-radius: 8px;
+            text-decoration: none;
+            font-size: 1rem;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            color: white;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(99, 102, 241, 0.4);
+        }
+
+        .btn-secondary {
+            background: var(--gray-200);
+            color: var(--gray-700);
+        }
+
+        .btn-secondary:hover {
+            background: var(--gray-300);
+        }
+
+        .btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none !important;
+        }
+
+        /* Loading state */
+        .loading {
+            display: inline-block;
+            width: 16px;
+            height: 16px;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            border-top-color: white;
+            animation: spin 1s ease-in-out infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        /* Messages */
+        .messages {
+            margin-bottom: 2rem;
+        }
+
+        .message {
+            background: white;
+            padding: 1rem;
+            border-radius: 8px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+            margin-bottom: 1rem;
+            border-left: 4px solid var(--success);
+        }
+
+        .message.error {
+            border-left-color: var(--error);
+        }
+
+        .message.warning {
+            border-left-color: var(--accent);
+        }
+
+        /* OAuth Notice */
+        .oauth-notice {
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            color: white;
+            padding: 1.5rem;
+            border-radius: 12px;
+            margin-bottom: 2rem;
+            text-align: center;
+        }
+
+        .oauth-notice-icon {
+            font-size: 2rem;
+            margin-bottom: 1rem;
+            opacity: 0.9;
+        }
+
+        .oauth-notice-title {
+            font-size: 1.25rem;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+        }
+
+        .oauth-notice-text {
+            opacity: 0.9;
+            line-height: 1.5;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .service-detail {
+                padding: 1rem;
+            }
+
+            .credential-form {
+                padding: 1.5rem;
+            }
+
+            .form-actions {
+                flex-direction: column;
+            }
+
+            .btn {
+                width: 100%;
+                justify-content: center;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar">
+        <div class="nav-container">
+            <a href="{% url 'dashboard' %}" class="back-btn">
+                <i class="fas fa-arrow-left"></i>
+                Back to Dashboard
+            </a>
+            <div class="logo">Flopro WA</div>
+            <div></div>
+        </div>
+    </nav>
+
+    <!-- Messages -->
+    {% if messages %}
+    <div class="messages">
+        {% for message in messages %}
+        <div class="message {% if message.tags %}{{ message.tags }}{% endif %}">
+            {{ message }}
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+    <!-- Service Detail -->
+    <div class="service-detail">
+        <div class="service-header">
+            <div class="service-icon-large">
+                <i class="{{ service.icon|default:'fas fa-cogs' }}"></i>
+            </div>
+            <h1 class="service-title">Unlock {{ service.name }}</h1>
+            <p class="service-description">{{ service.description }}</p>
+        </div>
+
+        <!-- OAuth Notice for OAuth services -->
+        {% if service.credential_type == 'googleOAuth2' %}
+        <div class="oauth-notice">
+            <div class="oauth-notice-icon">
+                <i class="fab fa-google"></i>
+            </div>
+            <h3 class="oauth-notice-title">Google OAuth2 Integration</h3>
+            <p class="oauth-notice-text">
+                This service requires Google OAuth2 authentication. You'll be redirected to Google to authorize access to your Google Sheets.
+                Make sure your n8n instance is properly configured with Google OAuth2 credentials.
+            </p>
+        </div>
+        {% endif %}
+
+        <!-- Credential Form -->
+        <form method="post" class="credential-form" id="credentialForm">
+            {% csrf_token %}
+
+            <div class="form-header">
+                <h2 class="form-title">Enter Your Credentials</h2>
+                <p class="form-subtitle">
+                    {% if service.credential_type == 'googleOAuth2' %}
+                        Connect your Google account to get started
+                    {% else %}
+                        Provide the required information to unlock this service
+                    {% endif %}
+                </p>
+            </div>
+
+            <!-- Dynamic form fields based on credential schema -->
+            {% for field_name, field_config in credential_schema.items %}
+            <div class="form-group">
+                <label for="id_{{ field_name }}" class="form-label">
+                    {{ field_config.label|default:field_name|title }}
+                    {% if field_config.required %}
+                        <span style="color: var(--error);">*</span>
+                    {% endif %}
+                </label>
+
+                {% if field_config.type == 'textarea' %}
+                    <textarea
+                        name="{{ field_name }}"
+                        id="id_{{ field_name }}"
+                        class="form-input form-textarea"
+                        placeholder="{{ field_config.placeholder|default:'' }}"
+                        {% if field_config.required %}required{% endif %}
+                    ></textarea>
+                {% elif field_config.type == 'password' %}
+                    <input
+                        type="password"
+                        name="{{ field_name }}"
+                        id="id_{{ field_name }}"
+                        class="form-input"
+                        placeholder="{{ field_config.placeholder|default:'' }}"
+                        {% if field_config.required %}required{% endif %}
+                    >
+                {% else %}
+                    <input
+                        type="{{ field_config.type|default:'text' }}"
+                        name="{{ field_name }}"
+                        id="id_{{ field_name }}"
+                        class="form-input"
+                        placeholder="{{ field_config.placeholder|default:'' }}"
+                        {% if field_config.required %}required{% endif %}
+                    >
+                {% endif %}
+
+                {% if field_config.help_text %}
+                    <div class="form-help">{{ field_config.help_text }}</div>
+                {% endif %}
+            </div>
+            {% endfor %}
+
+            <div class="form-actions">
+                <a href="{% url 'dashboard' %}" class="btn btn-secondary">
+                    <i class="fas fa-times"></i>
+                    Cancel
+                </a>
+                <button type="submit" class="btn btn-primary" id="submitBtn">
+                    <i class="fas fa-unlock"></i>
+                    <span id="btnText">Unlock Service</span>
+                    <span id="btnLoading" class="loading" style="display: none;"></span>
+                </button>
+            </div>
+        </form>
+    </div>
+
+    <script>
+        // Form submission handling
+        const form = document.getElementById('credentialForm');
+        const submitBtn = document.getElementById('submitBtn');
+        const btnText = document.getElementById('btnText');
+        const btnLoading = document.getElementById('btnLoading');
+
+        form.addEventListener('submit', function(e) {
+            // Show loading state
+            submitBtn.disabled = true;
+            btnText.style.display = 'none';
+            btnLoading.style.display = 'inline-block';
+
+            // Form will submit normally
+        });
+
+        // Auto-hide messages after 5 seconds
+        setTimeout(function() {
+            const messages = document.querySelectorAll('.message');
+            messages.forEach(function(message) {
+                message.style.opacity = '0';
+                setTimeout(function() {
+                    message.remove();
+                }, 300);
+            });
+        }, 5000);
+    </script>
+</body>
+</html>
