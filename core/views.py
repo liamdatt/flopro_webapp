@@ -1,3 +1,5 @@
 from django.shortcuts import render
 
-# Create your views here.
+def landing_page(request):
+    """Landing page view for the Flopro WA application."""
+    return render(request, 'core/landing_page.html')
