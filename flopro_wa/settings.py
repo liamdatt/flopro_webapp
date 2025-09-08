@@ -132,3 +132,6 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 LOGIN_URL = '/accounts/login/'
 LOGIN_REDIRECT_URL = '/dashboard/'
 LOGOUT_REDIRECT_URL = '/'
+
+# ---- Internal API Key (for n8n-to-Django calls) ----
+INTERNAL_API_KEY = os.environ.get('INTERNAL_API_KEY', '')

@@ -9,7 +9,7 @@ from django.views.decorators.csrf import csrf_exempt
 from django import forms
 import json
 
-from .models import Service, UserWorkflow
+from .models import Service, UserWorkflow, BudgetService, Transaction
 from .provisioning import provision_user_workflow, toggle_user_service, get_active_service
 
 
@@ -129,6 +129,51 @@ def service_detail(request, service_slug):
     if request.method == 'POST':
         # Handle credential form submission
         try:
+            if service.slug == 'budget-tracker':
+                # Ensure phone and budget are provided
+                phone = request.POST.get('phone_number') or request.user.phone_number
+                budget_raw = request.POST.get('budget_amount')
+                if not phone or not budget_raw:
+                    messages.error(request, 'Phone number and budget amount are required.')
+                    raise ValueError('Missing phone or budget')
+
+                # Normalize and save phone on user if changed
+                normalized_phone = ''.join(c for c in phone if c.isdigit() or c == '+')
+                if normalized_phone.startswith('+'):
+                    normalized_phone = normalized_phone[1:]
+                if request.user.phone_number != normalized_phone:
+                    request.user.phone_number = normalized_phone
+                    request.user.save(update_fields=['phone_number'])
+
+                # Upsert BudgetService
+                from decimal import Decimal
+                try:
+                    budget_amount = Decimal(budget_raw)
+                except Exception:
+                    messages.error(request, 'Invalid budget amount.')
+                    raise
+
+                BudgetService.objects.update_or_create(
+                    user=request.user,
+                    phone_number=normalized_phone,
+                    defaults={'budget_amount': budget_amount}
+                )
+
+                # Mark service as unlocked without n8n resources
+                UserWorkflow.objects.update_or_create(
+                    user=request.user,
+                    service=service,
+                    defaults={
+                        'name': f"{service.name} - {request.user.username}",
+                        'active': True,
+                        'n8n_workflow_id': None,
+                        'n8n_credential_id': None,
+                    }
+                )
+
+                messages.success(request, f"Successfully unlocked {service.name}!")
+                return redirect('dashboard')
+
             if service.credential_type == 'googleOAuth2':
                 # For OAuth2, redirect to n8n for authorization
                 return handle_oauth_flow(request, service)
@@ -250,10 +295,90 @@ def n8n_webhook(request, workflow_id):
     if request.method == 'POST':
         try:
             data = json.loads(request.body)
-            # Process webhook data
-            # This could trigger actions in your Django app
             return JsonResponse({'status': 'received'})
         except Exception as e:
             return JsonResponse({'error': str(e)}, status=400)
 
     return JsonResponse({'error': 'Method not allowed'}, status=405)
+
+
+@csrf_exempt
+def api_budget_remaining(request):
+    """Return remaining budget for a phone number: budget - sum(transactions)."""
+    from django.conf import settings
+    if request.method != 'GET':
+        return JsonResponse({'error': 'Method not allowed'}, status=405)
+
+    api_key = request.headers.get('X-API-Key') or request.GET.get('api_key')
+    if not settings.INTERNAL_API_KEY or api_key != settings.INTERNAL_API_KEY:
+        return JsonResponse({'error': 'Unauthorized'}, status=401)
+
+    phone = request.GET.get('phone')
+    if not phone:
+        return JsonResponse({'error': 'phone required'}, status=400)
+
+    normalized_phone = ''.join(c for c in phone if c.isdigit() or c == '+')
+    if normalized_phone.startswith('+'):
+        normalized_phone = normalized_phone[1:]
+
+    # Find budget profile
+    profile = BudgetService.objects.filter(phone_number=normalized_phone).order_by('-updated_at').first()
+    if not profile:
+        return JsonResponse({'error': 'budget not found'}, status=404)
+
+    from django.db.models import Sum
+    spent = Transaction.objects.filter(phone_number=normalized_phone).aggregate(s=Sum('total'))['s'] or 0
+    remaining = profile.budget_amount - spent
+    return JsonResponse({
+        'phone': normalized_phone,
+        'budget': str(profile.budget_amount),
+        'spent': str(spent),
+        'remaining': str(remaining),
+        'updated_at': profile.updated_at.isoformat(),
+    })
+
+
+@csrf_exempt
+def api_add_transaction(request):
+    """Add a transaction for a phone number via n8n or internal calls."""
+    from django.conf import settings
+    if request.method != 'POST':
+        return JsonResponse({'error': 'Method not allowed'}, status=405)
+
+    api_key = request.headers.get('X-API-Key') or request.GET.get('api_key')
+    if not settings.INTERNAL_API_KEY or api_key != settings.INTERNAL_API_KEY:
+        return JsonResponse({'error': 'Unauthorized'}, status=401)
+
+    try:
+        payload = json.loads(request.body)
+    except Exception:
+        return JsonResponse({'error': 'invalid json'}, status=400)
+
+    phone = payload.get('phone')
+    name = payload.get('name')
+    date = payload.get('date')
+    total = payload.get('total')
+
+    if not all([phone, name, date, total]):
+        return JsonResponse({'error': 'phone, name, date, total are required'}, status=400)
+
+    normalized_phone = ''.join(c for c in phone if c.isdigit() or c == '+')
+    if normalized_phone.startswith('+'):
+        normalized_phone = normalized_phone[1:]
+
+    from decimal import Decimal
+    from datetime import date as dt_date
+    try:
+        amt = Decimal(str(total))
+        tx_date = dt_date.fromisoformat(date)
+    except Exception:
+        return JsonResponse({'error': 'invalid date or total'}, status=400)
+
+    Transaction.objects.create(
+        phone_number=normalized_phone,
+        name=name,
+        date=tx_date,
+        total=amt,
+    )
+
+    return JsonResponse({'status': 'ok'})

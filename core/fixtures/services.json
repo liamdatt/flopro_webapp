@@ -5,43 +5,27 @@
     "fields": {
       "slug": "budget-tracker",
       "name": "Budget Tracker",
-      "description": "Automatically track your expenses and income using Google Sheets. Connect your bank statements and credit card data to maintain real-time budget monitoring.",
+      "description": "Track your expenses and monthly budget. No external credentials required.",
       "icon": "fas fa-calculator",
-      "template_workflow_id": 1,
-      "credential_type": "googleOAuth2",
+      "template_workflow_id": 0,
+      "credential_type": "none",
       "credential_ui_schema": {
-        "client_id": {
+        "phone_number": {
           "type": "text",
-          "label": "Google OAuth Client ID",
-          "placeholder": "Enter your Google OAuth Client ID",
+          "label": "Phone Number",
+          "placeholder": "+1 555 123 4567",
           "required": true,
-          "help_text": "Get this from Google Cloud Console > APIs & Services > Credentials"
+          "help_text": "Used to identify your account for transactions"
         },
-        "client_secret": {
-          "type": "password",
-          "label": "Google OAuth Client Secret",
-          "placeholder": "Enter your Google OAuth Client Secret",
+        "budget_amount": {
+          "type": "number",
+          "label": "Monthly Budget",
+          "placeholder": "Enter your monthly budget",
           "required": true,
-          "help_text": "Get this from Google Cloud Console > APIs & Services > Credentials"
-        },
-        "spreadsheet_id": {
-          "type": "text",
-          "label": "Google Sheets ID",
-          "placeholder": "Enter your Google Sheets document ID",
-          "required": true,
-          "help_text": "Find this in the URL of your Google Sheet: https://docs.google.com/spreadsheets/d/[SPREADSHEET_ID]/edit"
-        },
-        "sheet_name": {
-          "type": "text",
-          "label": "Sheet Name",
-          "placeholder": "e.g., Expenses, Budget",
-          "required": false,
-          "help_text": "Name of the sheet tab in your Google Sheets document (optional, defaults to first sheet)"
+          "help_text": "Your monthly spending limit"
         }
       },
-      "credential_node_types": [
-        "n8n-nodes-base.googleSheets"
-      ],
+      "credential_node_types": [],
       "is_active": true,
       "created_at": "2024-01-01T00:00:00Z",
       "updated_at": "2024-01-01T00:00:00Z"

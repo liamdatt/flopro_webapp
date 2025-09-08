@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import Service, UserWorkflow
+from .models import Service, UserWorkflow, BudgetService, Transaction
 
 
 @admin.register(Service)
@@ -48,3 +48,19 @@ class UserWorkflowAdmin(admin.ModelAdmin):
             'classes': ('collapse',)
         })
     )
+
+
+@admin.register(BudgetService)
+class BudgetServiceAdmin(admin.ModelAdmin):
+    list_display = ['user', 'phone_number', 'budget_amount', 'updated_at']
+    list_filter = ['updated_at']
+    search_fields = ['user__username', 'phone_number']
+    readonly_fields = ['created_at', 'updated_at']
+
+
+@admin.register(Transaction)
+class TransactionAdmin(admin.ModelAdmin):
+    list_display = ['phone_number', 'name', 'date', 'total', 'created_at']
+    list_filter = ['date', 'created_at']
+    search_fields = ['phone_number', 'name']
+    date_hierarchy = 'date'
