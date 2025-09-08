@@ -26,10 +26,15 @@ class CustomUserCreationForm(UserCreationForm):
         fields = UserCreationForm.Meta.fields + ('phone_number',)
 
     def save(self, commit=True):
-        user = super().save(commit=False)
-        user.phone_number = self.cleaned_data.get('phone_number')
-        if commit:
-            user.save()
+        user = super().save(commit=commit)
+        # Persist phone number in user.profile
+        phone = self.cleaned_data.get('phone_number')
+        if phone is not None:
+            normalized = ''.join(c for c in phone if c.isdigit() or c == '+')
+            if normalized.startswith('+'):
+                normalized = normalized[1:]
+            user.profile.phone_number = normalized
+            user.profile.save(update_fields=['phone_number'])
         return user
 
 
@@ -131,7 +136,7 @@ def service_detail(request, service_slug):
         try:
             if service.slug == 'budget-tracker':
                 # Ensure phone and budget are provided
-                phone = request.POST.get('phone_number') or request.user.phone_number
+                phone = request.POST.get('phone_number') or (getattr(request.user, 'profile', None) and request.user.profile.phone_number)
                 budget_raw = request.POST.get('budget_amount')
                 if not phone or not budget_raw:
                     messages.error(request, 'Phone number and budget amount are required.')
@@ -141,9 +146,10 @@ def service_detail(request, service_slug):
                 normalized_phone = ''.join(c for c in phone if c.isdigit() or c == '+')
                 if normalized_phone.startswith('+'):
                     normalized_phone = normalized_phone[1:]
-                if request.user.phone_number != normalized_phone:
-                    request.user.phone_number = normalized_phone
-                    request.user.save(update_fields=['phone_number'])
+                if getattr(request.user, 'profile', None) is not None:
+                    if request.user.profile.phone_number != normalized_phone:
+                        request.user.profile.phone_number = normalized_phone
+                        request.user.profile.save(update_fields=['phone_number'])
 
                 # Upsert BudgetService
                 from decimal import Decimal

@@ -3,8 +3,15 @@ from django.contrib.auth.models import User
 from django.utils import timezone
 
 
-# Extend the User model to add phone number
-User.add_to_class('phone_number', models.CharField(max_length=20, blank=True, null=True))
+class UserProfile(models.Model):
+    """Profile data for a Django auth user (e.g., phone number)."""
+    user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='profile')
+    phone_number = models.CharField(max_length=20, blank=True, null=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return f"Profile for {self.user.username}"
 
 
 class Service(models.Model):
