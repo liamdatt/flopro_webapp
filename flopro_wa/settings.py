@@ -76,12 +76,36 @@ WSGI_APPLICATION = 'flopro_wa.wsgi.application'
 
 # ---- Database (SQLite for now, path can come from env for persistence) ----
 SQLITE_PATH = os.environ.get('SQLITE_PATH')  # e.g. "/data/db.sqlite3" set in .env
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': SQLITE_PATH if SQLITE_PATH else BASE_DIR / 'db.sqlite3',
+# --- Database: Postgres via env; fallback to SQLite for dev ---
+DB_NAME = os.environ.get("POSTGRES_DB")
+DB_USER = os.environ.get("POSTGRES_USER")
+DB_PASSWORD = os.environ.get("POSTGRES_PASSWORD")
+DB_HOST = os.environ.get("POSTGRES_HOST") or os.environ.get("DB_HOST")  # allow either
+DB_PORT = os.environ.get("POSTGRES_PORT", "5432")
+
+if all([DB_NAME, DB_USER, DB_PASSWORD, DB_HOST]):
+    DATABASES = {
+        "default": {
+            "ENGINE": "django.db.backends.postgresql",
+            "NAME": DB_NAME,
+            "USER": DB_USER,
+            "PASSWORD": DB_PASSWORD,
+            "HOST": DB_HOST,
+            "PORT": DB_PORT,
+            "CONN_MAX_AGE": 60,  # keep-alive for perf
+            "OPTIONS": {"sslmode": os.environ.get("POSTGRES_SSLMODE", "disable")},
+        }
     }
-}
+else:
+    # Fallback (works in dev or before DB is configured)
+    SQLITE_PATH = os.environ.get("SQLITE_PATH")
+    DATABASES = {
+        "default": {
+            "ENGINE": "django.db.backends.sqlite3",
+            "NAME": SQLITE_PATH if SQLITE_PATH else BASE_DIR / "db.sqlite3",
+        }
+    }
+
 
 # ---- i18n ----
 LANGUAGE_CODE = 'en-us'
