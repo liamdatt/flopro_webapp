@@ -53,7 +53,7 @@ MIDDLEWARE = [
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
 
-ROOT_URLCONF = 'whatsapp_webapp.urls'
+ROOT_URLCONF = 'flopro_wa.urls'
 
 TEMPLATES = [
     {
@@ -71,7 +71,7 @@ TEMPLATES = [
     },
 ]
 
-WSGI_APPLICATION = 'whatsapp_webapp.wsgi.application'
+WSGI_APPLICATION = 'flopro_wa.wsgi.application'
 
 # ---- Database (SQLite for now, path can come from env for persistence) ----
 SQLITE_PATH = os.environ.get('SQLITE_PATH')  # e.g. "/data/db.sqlite3" set in .env
