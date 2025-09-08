@@ -36,7 +36,7 @@ class CustomUserCreationForm(UserCreationForm):
 def landing_page(request):
     """Landing page view for the Flopro WA application."""
     if request.user.is_authenticated:
-        return redirect('dashboard')
+        return redirect('core:dashboard')
 
     services = Service.objects.filter(is_active=True)
     return render(request, 'core/landing_page.html', {'services': services})
@@ -122,7 +122,7 @@ def service_detail(request, service_slug):
     # Check if user already has this service
     try:
         user_workflow = UserWorkflow.objects.get(user=request.user, service=service)
-        return redirect('dashboard')  # Already has this service
+        return redirect('core:dashboard')  # Already has this service
     except UserWorkflow.DoesNotExist:
         pass
 
@@ -172,7 +172,7 @@ def service_detail(request, service_slug):
                 )
 
                 messages.success(request, f"Successfully unlocked {service.name}!")
-                return redirect('dashboard')
+                return redirect('core:dashboard')
 
             if service.credential_type == 'googleOAuth2':
                 # For OAuth2, redirect to n8n for authorization
@@ -186,7 +186,7 @@ def service_detail(request, service_slug):
                     credential_data=credential_data
                 )
                 messages.success(request, f"Successfully unlocked {service.name}!")
-                return redirect('dashboard')
+                return redirect('core:dashboard')
 
         except Exception as e:
             messages.error(request, f"Failed to unlock service: {str(e)}")

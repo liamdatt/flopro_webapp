@@ -315,7 +315,7 @@
     <!-- Navigation -->
     <nav class="navbar">
         <div class="nav-container">
-            <a href="{% url 'dashboard' %}" class="back-btn">
+            <a href="{% url 'core:dashboard' %}" class="back-btn">
                 <i class="fas fa-arrow-left"></i>
                 Back to Dashboard
             </a>
@@ -419,7 +419,7 @@
             {% endfor %}
 
             <div class="form-actions">
-                <a href="{% url 'dashboard' %}" class="btn btn-secondary">
+                <a href="{% url 'core:dashboard' %}" class="btn btn-secondary">
                     <i class="fas fa-times"></i>
                     Cancel
                 </a>

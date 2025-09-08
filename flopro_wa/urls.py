@@ -21,7 +21,7 @@ from core.views import login_view, logout_view
 
 urlpatterns = [
     path('admin/', admin.site.urls),
-    path('', include('core.urls')),
+    path('', include(('core.urls', 'core'), namespace='core')),
     
     # Custom auth URLs that override Django's defaults
     path('accounts/login/', login_view, name='login'),
