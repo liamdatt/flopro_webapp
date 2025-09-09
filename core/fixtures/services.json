@@ -30,5 +30,33 @@
       "created_at": "2024-01-01T00:00:00Z",
       "updated_at": "2024-01-01T00:00:00Z"
     }
+  },
+  {
+    "model": "core.service",
+    "pk": 2,
+    "fields": {
+      "slug": "ultimate-personal-assistant",
+      "name": "Ultimate Personal Assistant",
+      "description": "AI assistant that reads your Gmail and manages Google Calendar events.",
+      "icon": "fas fa-user-astronaut",
+      "template_workflow_id": 2,
+      "credential_type": "googleOAuth2",
+      "credential_ui_schema": {
+        "phone_number": {
+          "type": "text",
+          "label": "Phone Number",
+          "placeholder": "+1 555 123 4567",
+          "required": true,
+          "help_text": "Used to identify your account for assistant messages"
+        }
+      },
+      "credential_node_types": [
+        "n8n-nodes-base.gmail",
+        "n8n-nodes-base.googleCalendar"
+      ],
+      "is_active": true,
+      "created_at": "2024-01-01T00:00:00Z",
+      "updated_at": "2024-01-01T00:00:00Z"
+    }
   }
 ]

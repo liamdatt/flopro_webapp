@@ -395,7 +395,7 @@
             </div>
             <h3 class="oauth-notice-title">Google OAuth2 Integration</h3>
             <p class="oauth-notice-text">
-                This service requires Google OAuth2 authentication. You'll be redirected to Google to authorize access to your Google Sheets.
+                This service requires Google OAuth2 authentication. You'll be redirected to Google to authorize access to your Gmail and Google Calendar.
                 Make sure your n8n instance is properly configured with Google OAuth2 credentials.
             </p>
         </div>
@@ -410,7 +410,7 @@
                 <p class="form-subtitle">
                     {% if service.credential_type == 'googleOAuth2' %}
                         Connect your Google account to get started
-                    {% elif service.slug == 'budget-tracker' and user_has_phone %}
+                    {% elif needs_phone and user_has_phone %}
                         Your phone number from signup will be used automatically
                     {% else %}
                         Provide the required information to unlock this service
@@ -419,7 +419,7 @@
             </div>
 
             <!-- Phone number notice for budget tracker users who already have one -->
-            {% if service.slug == 'budget-tracker' and user_has_phone %}
+            {% if needs_phone and user_has_phone %}
             <div class="phone-notice">
                 <div class="phone-notice-icon">
                     <i class="fas fa-mobile-alt"></i>
