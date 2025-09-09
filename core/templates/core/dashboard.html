@@ -587,6 +587,105 @@
             font-weight: 500;
         }
 
+        /* Account Settings */
+        .account-settings {
+            margin-bottom: 3rem;
+        }
+
+        .account-settings-header {
+            margin-bottom: 2rem;
+        }
+
+        .account-settings-title {
+            font-size: 1.75rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+            color: var(--pure-white);
+        }
+
+        .account-settings-subtitle {
+            color: var(--light-gray);
+            font-size: 1.1rem;
+            font-weight: 400;
+        }
+
+        .account-settings-content {
+            display: grid;
+            gap: 1.5rem;
+        }
+
+        .settings-card {
+            background: var(--glass-primary);
+            border: 1px solid var(--glass-border);
+            border-radius: 16px;
+            padding: 2rem;
+            backdrop-filter: blur(20px);
+            display: flex;
+            align-items: center;
+            gap: 1.5rem;
+            transition: all 0.3s ease;
+        }
+
+        .settings-card:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-medium);
+        }
+
+        .danger-card {
+            border-left: 4px solid var(--error-red);
+        }
+
+        .danger-card:hover {
+            border-color: rgba(255, 71, 87, 0.5);
+        }
+
+        .settings-card-icon {
+            width: 50px;
+            height: 50px;
+            background: var(--error-red);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.25rem;
+            color: var(--pure-white);
+            flex-shrink: 0;
+        }
+
+        .settings-card-content {
+            flex: 1;
+        }
+
+        .settings-card-title {
+            font-size: 1.25rem;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+            color: var(--pure-white);
+        }
+
+        .settings-card-description {
+            color: var(--light-gray);
+            line-height: 1.5;
+            margin: 0;
+        }
+
+        .settings-card-actions {
+            flex-shrink: 0;
+        }
+
+        .btn-danger {
+            background: var(--error-red);
+            color: var(--pure-white);
+            border: 1px solid var(--error-red);
+        }
+
+        .btn-danger:hover {
+            background: #e74c3c;
+            border-color: #e74c3c;
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(231, 76, 60, 0.3);
+        }
+
         /* Responsive Design */
         @media (max-width: 768px) {
             .dashboard {
@@ -640,6 +739,25 @@
             }
 
             .btn {
+                justify-content: center;
+            }
+
+            .settings-card {
+                flex-direction: column;
+                text-align: center;
+                gap: 1rem;
+            }
+
+            .settings-card-icon {
+                align-self: center;
+            }
+
+            .settings-card-actions {
+                width: 100%;
+            }
+
+            .btn-danger {
+                width: 100%;
                 justify-content: center;
             }
         }
@@ -707,6 +825,33 @@
             <div class="stat-card">
                 <div class="stat-number">24/7</div>
                 <div class="stat-label">Monitoring</div>
+            </div>
+        </div>
+
+        <!-- Account Settings -->
+        <div class="account-settings">
+            <div class="account-settings-header">
+                <h3 class="account-settings-title">Account Settings</h3>
+                <p class="account-settings-subtitle">Manage your account and data</p>
+            </div>
+            <div class="account-settings-content">
+                <div class="settings-card danger-card">
+                    <div class="settings-card-icon">
+                        <i class="fas fa-exclamation-triangle"></i>
+                    </div>
+                    <div class="settings-card-content">
+                        <h4 class="settings-card-title">Delete Account</h4>
+                        <p class="settings-card-description">
+                            Permanently delete your account and all associated data. This action cannot be undone.
+                        </p>
+                    </div>
+                    <div class="settings-card-actions">
+                        <a href="{% url 'core:delete_account' %}" class="btn btn-danger">
+                            <i class="fas fa-trash-alt"></i>
+                            Delete Account
+                        </a>
+                    </div>
+                </div>
             </div>
         </div>
 

@@ -1,0 +1,404 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Delete Account - Flopro WA</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #6366f1;
+            --primary-dark: #4f46e5;
+            --secondary: #06b6d4;
+            --accent: #f59e0b;
+            --dark: #0f172a;
+            --light: #f8fafc;
+            --gray-100: #f1f5f9;
+            --gray-200: #e2e8f0;
+            --gray-300: #cbd5e1;
+            --gray-800: #1e293b;
+            --success: #10b981;
+            --error: #ef4444;
+            --warning: #f59e0b;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            line-height: 1.6;
+            color: var(--gray-800);
+            background: var(--light);
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 3rem;
+            padding: 2rem 0;
+        }
+
+        .warning-icon {
+            font-size: 4rem;
+            color: var(--error);
+            margin-bottom: 1rem;
+        }
+
+        .title {
+            font-size: 2.5rem;
+            font-weight: 700;
+            color: var(--dark);
+            margin-bottom: 1rem;
+        }
+
+        .subtitle {
+            font-size: 1.2rem;
+            color: var(--gray-600);
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        .warning-card {
+            background: linear-gradient(135deg, #fff5f5 0%, #fed7d7 100%);
+            border: 2px solid var(--error);
+            border-radius: 16px;
+            padding: 2rem;
+            margin-bottom: 2rem;
+            text-align: center;
+        }
+
+        .warning-card h3 {
+            color: var(--error);
+            font-size: 1.5rem;
+            margin-bottom: 1rem;
+        }
+
+        .warning-card p {
+            color: var(--dark);
+            font-weight: 500;
+        }
+
+        .data-section {
+            background: white;
+            border-radius: 12px;
+            padding: 2rem;
+            margin-bottom: 2rem;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            border: 1px solid var(--gray-200);
+        }
+
+        .section-title {
+            font-size: 1.25rem;
+            font-weight: 600;
+            color: var(--dark);
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .data-list {
+            list-style: none;
+            padding: 0;
+        }
+
+        .data-item {
+            padding: 0.75rem;
+            border-bottom: 1px solid var(--gray-200);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .data-item:last-child {
+            border-bottom: none;
+        }
+
+        .data-label {
+            font-weight: 500;
+            color: var(--gray-800);
+        }
+
+        .data-value {
+            color: var(--gray-600);
+            font-size: 0.9rem;
+        }
+
+        .empty-state {
+            text-align: center;
+            color: var(--gray-500);
+            font-style: italic;
+            padding: 1rem;
+        }
+
+        .confirmation-section {
+            background: white;
+            border-radius: 12px;
+            padding: 2rem;
+            margin-bottom: 2rem;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            border: 1px solid var(--gray-200);
+        }
+
+        .confirmation-input {
+            width: 100%;
+            padding: 1rem;
+            border: 2px solid var(--gray-300);
+            border-radius: 8px;
+            font-size: 1rem;
+            margin-bottom: 1rem;
+            transition: border-color 0.3s ease;
+        }
+
+        .confirmation-input:focus {
+            outline: none;
+            border-color: var(--error);
+            box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.1);
+        }
+
+        .confirmation-text {
+            background: var(--gray-100);
+            padding: 1rem;
+            border-radius: 8px;
+            font-family: monospace;
+            font-weight: 600;
+            color: var(--error);
+            margin-bottom: 1rem;
+        }
+
+        .actions {
+            display: flex;
+            gap: 1rem;
+            justify-content: center;
+            margin-top: 2rem;
+        }
+
+        .btn {
+            padding: 1rem 2rem;
+            border: none;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: 600;
+            text-decoration: none;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .btn-danger {
+            background: var(--error);
+            color: white;
+        }
+
+        .btn-danger:hover {
+            background: #dc2626;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(239, 68, 68, 0.4);
+        }
+
+        .btn-secondary {
+            background: var(--gray-200);
+            color: var(--gray-700);
+        }
+
+        .btn-secondary:hover {
+            background: var(--gray-300);
+            transform: translateY(-2px);
+        }
+
+        .messages {
+            margin-bottom: 2rem;
+        }
+
+        .message {
+            background: white;
+            padding: 1rem;
+            border-radius: 8px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+            margin-bottom: 1rem;
+            border-left: 4px solid var(--error);
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .message.error {
+            border-left-color: var(--error);
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .container {
+                padding: 1rem;
+            }
+
+            .title {
+                font-size: 2rem;
+            }
+
+            .actions {
+                flex-direction: column;
+            }
+
+            .btn {
+                width: 100%;
+                justify-content: center;
+            }
+
+            .data-item {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 0.25rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="warning-icon">
+                <i class="fas fa-exclamation-triangle"></i>
+            </div>
+            <h1 class="title">Delete Account</h1>
+            <p class="subtitle">This action is permanent and cannot be undone. All your data will be permanently removed from our system.</p>
+        </div>
+
+        {% if messages %}
+        <div class="messages">
+            {% for message in messages %}
+            <div class="message {% if message.tags %}{{ message.tags }}{% endif %}">
+                <i class="fas fa-{% if 'error' in message.tags %}exclamation-triangle{% else %}check-circle{% endif %}"></i>
+                {{ message }}
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+
+        <div class="warning-card">
+            <h3><i class="fas fa-exclamation-triangle"></i> Warning: This Action Cannot Be Undone</h3>
+            <p>Once you delete your account, there is no way to recover your data or restore your account.</p>
+        </div>
+
+        <div class="data-section">
+            <h2 class="section-title">
+                <i class="fas fa-user"></i>
+                Account Information
+            </h2>
+            <ul class="data-list">
+                <li class="data-item">
+                    <span class="data-label">Username:</span>
+                    <span class="data-value">{{ user.username }}</span>
+                </li>
+                <li class="data-item">
+                    <span class="data-label">Email:</span>
+                    <span class="data-value">{{ user.email|default:"Not provided" }}</span>
+                </li>
+                {% if has_phone %}
+                <li class="data-item">
+                    <span class="data-label">Phone Number:</span>
+                    <span class="data-value">{{ user.profile.phone_number }}</span>
+                </li>
+                {% endif %}
+            </ul>
+        </div>
+
+        {% if user_workflows %}
+        <div class="data-section">
+            <h2 class="section-title">
+                <i class="fas fa-cogs"></i>
+                Unlocked Services ({{ user_workflows|length }})
+            </h2>
+            <ul class="data-list">
+                {% for workflow in user_workflows %}
+                <li class="data-item">
+                    <span class="data-label">{{ workflow.service.name }}</span>
+                    <span class="data-value">{% if workflow.active %}Active{% else %}Inactive{% endif %}</span>
+                </li>
+                {% endfor %}
+            </ul>
+        </div>
+        {% else %}
+        <div class="data-section">
+            <h2 class="section-title">
+                <i class="fas fa-cogs"></i>
+                Unlocked Services
+            </h2>
+            <div class="empty-state">No services have been unlocked yet.</div>
+        </div>
+        {% endif %}
+
+        {% if budget_services %}
+        <div class="data-section">
+            <h2 class="section-title">
+                <i class="fas fa-calculator"></i>
+                Budget Services ({{ budget_services|length }})
+            </h2>
+            <ul class="data-list">
+                {% for budget in budget_services %}
+                <li class="data-item">
+                    <span class="data-label">Monthly Budget:</span>
+                    <span class="data-value">${{ budget.budget_amount }}</span>
+                </li>
+                {% endfor %}
+            </ul>
+        </div>
+        {% endif %}
+
+        {% if transactions %}
+        <div class="data-section">
+            <h2 class="section-title">
+                <i class="fas fa-receipt"></i>
+                Transaction History ({{ transactions|length }})
+            </h2>
+            <div class="empty-state">All transaction data will be permanently deleted.</div>
+        </div>
+        {% endif %}
+
+        <div class="confirmation-section">
+            <h2 class="section-title">
+                <i class="fas fa-keyboard"></i>
+                Confirmation Required
+            </h2>
+            <p style="margin-bottom: 1rem; color: var(--gray-600);">
+                To confirm account deletion, please type the following text exactly as shown:
+            </p>
+            <div class="confirmation-text">
+                delete {{ user.username }}
+            </div>
+            <form method="post">
+                {% csrf_token %}
+                <input
+                    type="text"
+                    name="confirmation"
+                    class="confirmation-input"
+                    placeholder="Type the confirmation text here..."
+                    required
+                    autocomplete="off"
+                >
+                <div class="actions">
+                    <a href="{% url 'core:dashboard' %}" class="btn btn-secondary">
+                        <i class="fas fa-arrow-left"></i>
+                        Cancel
+                    </a>
+                    <button type="submit" class="btn btn-danger">
+                        <i class="fas fa-trash-alt"></i>
+                        Delete Account Permanently
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</body>
+</html>

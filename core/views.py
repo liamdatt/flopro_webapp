@@ -11,6 +11,7 @@ import json
 
 from .models import Service, UserWorkflow, BudgetService, Transaction
 from .provisioning import provision_user_workflow, toggle_user_service, get_active_service
+from .n8n_client import N8nClient
 
 
 class CustomUserCreationForm(UserCreationForm):
@@ -138,9 +139,24 @@ def service_detail(request, service_slug):
                 # Ensure phone and budget are provided
                 phone = request.POST.get('phone_number') or (getattr(request.user, 'profile', None) and request.user.profile.phone_number)
                 budget_raw = request.POST.get('budget_amount')
-                if not phone or not budget_raw:
-                    messages.error(request, 'Phone number and budget amount are required.')
-                    raise ValueError('Missing phone or budget')
+
+                # Check if phone is required (only if user doesn't have one in profile)
+                user_has_phone = (
+                    hasattr(request.user, 'profile') and
+                    request.user.profile.phone_number and
+                    request.user.profile.phone_number.strip()
+                )
+
+                if not phone:
+                    if user_has_phone:
+                        phone = request.user.profile.phone_number
+                    else:
+                        messages.error(request, 'Phone number is required.')
+                        raise ValueError('Missing phone number')
+
+                if not budget_raw:
+                    messages.error(request, 'Budget amount is required.')
+                    raise ValueError('Missing budget amount')
 
                 # Normalize and save phone on user if changed
                 normalized_phone = ''.join(c for c in phone if c.isdigit() or c == '+')
@@ -197,9 +213,33 @@ def service_detail(request, service_slug):
         except Exception as e:
             messages.error(request, f"Failed to unlock service: {str(e)}")
 
+    # For budget tracker, modify schema based on user's phone number status
+    credential_schema = service.credential_ui_schema.copy() if service.credential_ui_schema else {}
+
+    if service.slug == 'budget-tracker':
+        # Check if user already has a phone number in their profile
+        user_has_phone = (
+            hasattr(request.user, 'profile') and
+            request.user.profile.phone_number and
+            request.user.profile.phone_number.strip()
+        )
+
+        if user_has_phone:
+            # Remove phone_number field from schema since user already provided it
+            credential_schema.pop('phone_number', None)
+        else:
+            # Keep phone_number field but make it required
+            if 'phone_number' in credential_schema:
+                credential_schema['phone_number']['required'] = True
+
     context = {
         'service': service,
-        'credential_schema': service.credential_ui_schema,
+        'credential_schema': credential_schema,
+        'user_has_phone': (
+            hasattr(request.user, 'profile') and
+            request.user.profile.phone_number and
+            request.user.profile.phone_number.strip()
+        ) if service.slug == 'budget-tracker' else False,
     }
     return render(request, 'core/service_detail.html', context)
 
@@ -325,6 +365,70 @@ def toggle_service(request, service_slug):
         messages.error(request, f"You haven't unlocked {service.name} yet")
 
     return redirect('dashboard')
+
+
+@login_required
+def delete_account(request):
+    """Handle account deletion with confirmation."""
+    if request.method == 'POST':
+        # Check for confirmation
+        confirmation = request.POST.get('confirmation', '').strip().lower()
+        if confirmation == f'delete {request.user.username}':
+            try:
+                # Get user data before deletion for logging
+                user_data = {
+                    'username': request.user.username,
+                    'email': request.user.email,
+                    'phone': getattr(request.user.profile, 'phone_number', None) if hasattr(request.user, 'profile') else None,
+                    'services_count': UserWorkflow.objects.filter(user=request.user).count(),
+                    'transactions_count': Transaction.objects.filter(phone_number=getattr(request.user.profile, 'phone_number', '') if hasattr(request.user, 'profile') else '').count()
+                }
+
+                # Delete all related data
+                # Delete UserWorkflows (this handles the relationship to services)
+                UserWorkflow.objects.filter(user=request.user).delete()
+
+                # Delete BudgetService entries
+                if hasattr(request.user, 'profile') and request.user.profile.phone_number:
+                    BudgetService.objects.filter(phone_number=request.user.profile.phone_number).delete()
+
+                # Delete transactions associated with this user's phone number
+                if hasattr(request.user, 'profile') and request.user.profile.phone_number:
+                    Transaction.objects.filter(phone_number=request.user.profile.phone_number).delete()
+
+                # Store user reference before logout
+                user_to_delete = request.user
+
+                # Delete the user (this will cascade to UserProfile due to OneToOneField)
+                user_to_delete.delete()
+
+                # Now logout (this will set request.user to AnonymousUser)
+                from django.contrib.auth import logout
+                logout(request)
+
+                # Log the deletion (you might want to log this elsewhere)
+                print(f"Account deleted: {user_data}")
+
+                messages.success(request, 'Your account has been permanently deleted.')
+                return redirect('core:landing_page')
+
+            except Exception as e:
+                messages.error(request, f'Error deleting account: {str(e)}')
+                return redirect('core:dashboard')
+        else:
+            messages.error(request, 'Confirmation text does not match. Account not deleted.')
+            return redirect('core:delete_account')
+
+    # GET request - show confirmation page
+    context = {
+        'user_workflows': UserWorkflow.objects.filter(user=request.user),
+        'budget_services': BudgetService.objects.filter(user=request.user) if hasattr(request.user, 'profile') else [],
+        'transactions': Transaction.objects.filter(
+            phone_number=getattr(request.user.profile, 'phone_number', '')
+        ) if hasattr(request.user, 'profile') else [],
+        'has_phone': hasattr(request.user, 'profile') and request.user.profile.phone_number,
+    }
+    return render(request, 'core/delete_account.html', context)
 
 
 @login_required
