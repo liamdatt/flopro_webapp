@@ -205,6 +205,115 @@ def service_detail(request, service_slug):
 
 
 @login_required
+def service_overview(request, service_slug):
+    """Overview page for a service; for budget-tracker show metrics and table."""
+    service = get_object_or_404(Service, slug=service_slug, is_active=True)
+    if service.slug != 'budget-tracker':
+        return redirect('core:service_detail', service_slug=service.slug)
+
+    # Ensure user has unlocked
+    if not UserWorkflow.objects.filter(user=request.user, service=service).exists():
+        messages.error(request, 'Please unlock this service first.')
+        return redirect('core:service_detail', service_slug=service.slug)
+
+    # Resolve phone
+    phone = None
+    if getattr(request.user, 'profile', None):
+        phone = request.user.profile.phone_number
+    # Fallback: scan BudgetService rows
+    if not phone:
+        profile = BudgetService.objects.filter(user=request.user).order_by('-updated_at').first()
+        phone = profile.phone_number if profile else None
+
+    if not phone:
+        messages.error(request, 'Missing phone number. Please reconfigure this service.')
+        return redirect('core:service_detail', service_slug=service.slug)
+
+    # Load budget profile
+    profile = BudgetService.objects.filter(user=request.user, phone_number=phone).order_by('-updated_at').first()
+    from django.db.models import Sum
+    spent = Transaction.objects.filter(phone_number=phone).aggregate(s=Sum('total'))['s'] or 0
+    remaining = (profile.budget_amount if profile else 0) - spent
+
+    # Transactions list
+    transactions = Transaction.objects.filter(phone_number=phone).order_by('-date', '-created_at')
+
+    context = {
+        'service': service,
+        'phone': phone,
+        'budget': profile.budget_amount if profile else 0,
+        'spent': spent,
+        'remaining': remaining,
+        'transactions': transactions,
+    }
+    return render(request, 'core/budget_overview.html', context)
+
+
+@login_required
+@require_POST
+def update_budget(request, service_slug):
+    service = get_object_or_404(Service, slug=service_slug, is_active=True)
+    if service.slug != 'budget-tracker':
+        return redirect('core:service_detail', service_slug=service.slug)
+
+    amount = request.POST.get('budget_amount')
+    if not amount:
+        messages.error(request, 'Budget amount is required.')
+        return redirect('core:service_overview', service_slug=service.slug)
+
+    # Resolve phone
+    phone = None
+    if getattr(request.user, 'profile', None):
+        phone = request.user.profile.phone_number
+    profile = BudgetService.objects.filter(user=request.user).order_by('-updated_at').first()
+    if not phone and profile:
+        phone = profile.phone_number
+
+    if not phone:
+        messages.error(request, 'Missing phone number. Please reconfigure this service.')
+        return redirect('core:service_overview', service_slug=service.slug)
+
+    from decimal import Decimal
+    try:
+        val = Decimal(str(amount))
+    except Exception:
+        messages.error(request, 'Invalid budget amount.')
+        return redirect('core:service_overview', service_slug=service.slug)
+
+    BudgetService.objects.update_or_create(
+        user=request.user,
+        phone_number=phone,
+        defaults={'budget_amount': val}
+    )
+    messages.success(request, 'Budget updated successfully.')
+    return redirect('core:service_overview', service_slug=service.slug)
+
+
+@login_required
+@require_POST
+def delete_transaction(request, service_slug, tx_id):
+    service = get_object_or_404(Service, slug=service_slug, is_active=True)
+    if service.slug != 'budget-tracker':
+        return redirect('core:service_detail', service_slug=service.slug)
+
+    # Resolve phone allowed to delete
+    phone = None
+    if getattr(request.user, 'profile', None):
+        phone = request.user.profile.phone_number
+    profile = BudgetService.objects.filter(user=request.user).order_by('-updated_at').first()
+    if not phone and profile:
+        phone = profile.phone_number
+
+    tx = get_object_or_404(Transaction, id=tx_id)
+    if phone and tx.phone_number == phone:
+        tx.delete()
+        messages.success(request, 'Transaction deleted.')
+    else:
+        messages.error(request, 'Not authorized to delete this transaction.')
+    return redirect('core:service_overview', service_slug=service.slug)
+
+
+@login_required
 @require_POST
 def toggle_service(request, service_slug):
     """Toggle between user services."""
