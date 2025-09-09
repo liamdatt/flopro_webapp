@@ -58,7 +58,9 @@
             align-items: center;
             justify-content: center;
             position: relative;
-            overflow: hidden;
+            overflow-x: hidden;
+            overflow-y: auto;
+            padding: 2rem 1rem;
         }
 
         body::before {
@@ -111,6 +113,8 @@
             position: relative;
             z-index: 10;
             animation: slideUp 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+            margin: auto;
+            flex-shrink: 0;
         }
 
         @keyframes slideUp {
@@ -411,8 +415,13 @@
 
         /* Responsive Design */
         @media (max-width: 768px) {
+            body {
+                align-items: flex-start;
+                padding: 1rem;
+            }
+            
             .auth-container {
-                margin: 1rem;
+                margin: 0;
                 padding: 2rem;
                 max-width: none;
             }
@@ -427,6 +436,10 @@
         }
 
         @media (max-width: 480px) {
+            body {
+                padding: 0.5rem;
+            }
+            
             .auth-container {
                 padding: 1.5rem;
             }
