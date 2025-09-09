@@ -11,6 +11,7 @@ A Django-based web application that integrates with n8n to provide user-specific
 - **Workflow Provisioning**: Automatic duplication of n8n templates with user-specific credentials
 - **Service Toggling**: Easy switching between active services
 - **n8n Integration**: Full REST API integration with n8n workflow automation platform
+- **Ultimate Personal Assistant**: AI assistant that connects to Gmail and Google Calendar via Google OAuth2
 
 ## Architecture
 
@@ -152,7 +153,7 @@ Uses `X-N8N-API-KEY` header for n8n API authentication.
 
 ### OAuth2 Flow
 
-For OAuth2 services (like Google Sheets):
+For OAuth2 services (like Gmail or Google Calendar):
 1. User provides OAuth credentials through Django form
 2. Django creates n8n credential
 3. Workflow is provisioned with credential reference

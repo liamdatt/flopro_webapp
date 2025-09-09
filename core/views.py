@@ -217,6 +217,32 @@ def service_detail(request, service_slug):
                 messages.success(request, f"Successfully unlocked {service.name}!")
                 return redirect('core:dashboard')
 
+            if service.slug == 'ultimate-personal-assistant':
+                # Ensure phone number is available
+                phone = request.POST.get('phone_number') or (
+                    getattr(request.user, 'profile', None) and request.user.profile.phone_number
+                )
+
+                if not phone:
+                    messages.error(request, 'Phone number is required.')
+                    raise ValueError('Missing phone number')
+
+                # Normalize and save phone on user if changed or missing
+                normalized_phone = ''.join(c for c in phone if c.isdigit() or c == '+')
+                if normalized_phone.startswith('+'):
+                    normalized_phone = normalized_phone[1:]
+                if getattr(request.user, 'profile', None) is not None:
+                    if request.user.profile.phone_number != normalized_phone:
+                        existing_profile = UserProfile.objects.filter(phone_number=normalized_phone).exclude(user=request.user).first()
+                        if existing_profile:
+                            messages.error(request, 'This phone number is already in use by another account. Please use a different phone number.')
+                            raise ValueError('Phone number already in use')
+                        request.user.profile.phone_number = normalized_phone
+                        request.user.profile.save(update_fields=['phone_number'])
+
+                # Continue with OAuth provisioning
+                return handle_oauth_flow(request, service)
+
             if service.credential_type == 'googleOAuth2':
                 # For OAuth2, redirect to n8n for authorization
                 return handle_oauth_flow(request, service)
@@ -234,11 +260,12 @@ def service_detail(request, service_slug):
         except Exception as e:
             messages.error(request, f"Failed to unlock service: {str(e)}")
 
-    # For budget tracker, modify schema based on user's phone number status
+    # Modify schema based on user's phone number status for services that need it
     credential_schema = service.credential_ui_schema.copy() if service.credential_ui_schema else {}
+    needs_phone = service.slug in ['budget-tracker', 'ultimate-personal-assistant']
 
-    if service.slug == 'budget-tracker':
-        # Check if user already has a phone number in their profile
+    user_has_phone = False
+    if needs_phone:
         user_has_phone = (
             hasattr(request.user, 'profile') and
             request.user.profile.phone_number and
@@ -256,11 +283,8 @@ def service_detail(request, service_slug):
     context = {
         'service': service,
         'credential_schema': credential_schema,
-        'user_has_phone': (
-            hasattr(request.user, 'profile') and
-            request.user.profile.phone_number and
-            request.user.profile.phone_number.strip()
-        ) if service.slug == 'budget-tracker' else False,
+        'user_has_phone': user_has_phone,
+        'needs_phone': needs_phone,
     }
     return render(request, 'core/service_detail.html', context)
 
@@ -479,7 +503,7 @@ def unlock_service(request, service_slug):
 
 
 def handle_oauth_flow(request, service):
-    """Handle OAuth2 flow for services like Google Sheets."""
+    """Handle OAuth2 flow for Google services like Gmail and Calendar."""
     # For OAuth2 services, we need to initiate the OAuth flow through n8n
     # This is a simplified implementation - in production you'd want to:
     # 1. Create a temporary credential in n8n with the user's OAuth data
@@ -516,6 +540,9 @@ def extract_credential_data(post_data, service):
     schema = service.credential_ui_schema
 
     for field_name, field_config in schema.items():
+        # Skip phone_number for OAuth services - it's handled separately
+        if field_name == 'phone_number' and service.credential_type == 'googleOAuth2':
+            continue
         if field_name in post_data:
             credential_data[field_name] = post_data[field_name]
 
