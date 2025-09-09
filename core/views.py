@@ -523,3 +523,47 @@ def api_add_transaction(request):
     )
 
     return JsonResponse({'status': 'ok'})
+
+
+@csrf_exempt
+def api_phone_allowed(request):
+    """Return {'allowed': true|false} based on whether the phone has any unlocked service.
+
+    Accepts GET ?phone=... or POST JSON {'phone': '...'}.
+    Requires INTERNAL_API_KEY via Authorization/X-API-Key/ ?api_key.
+    """
+    from django.conf import settings
+    if request.method not in ('GET', 'POST'):
+        return JsonResponse({'error': 'Method not allowed'}, status=405)
+
+    # Auth
+    auth_header = request.headers.get('Authorization')
+    bearer = None
+    if auth_header:
+        parts = auth_header.split(' ', 1)
+        if len(parts) == 2 and parts[0].lower() == 'bearer':
+            bearer = parts[1].strip()
+        else:
+            bearer = auth_header.strip()
+    api_key = request.headers.get('X-API-Key') or bearer or request.GET.get('api_key')
+    if not settings.INTERNAL_API_KEY or api_key != settings.INTERNAL_API_KEY:
+        return JsonResponse({'error': 'Unauthorized'}, status=401)
+
+    # Phone extraction
+    phone = request.GET.get('phone')
+    if request.method == 'POST' and not phone:
+        try:
+            body = json.loads(request.body or '{}')
+        except Exception:
+            body = {}
+        phone = body.get('phone') or body.get('phone_number') or request.POST.get('phone') or request.POST.get('phone_number')
+    if not phone:
+        return JsonResponse({'error': 'phone required'}, status=400)
+
+    normalized_phone = ''.join(c for c in phone if c.isdigit() or c == '+')
+    if normalized_phone.startswith('+'):
+        normalized_phone = normalized_phone[1:]
+
+    # Check if any workflow exists for user with this phone (profile)
+    exists = UserWorkflow.objects.filter(user__profile__phone_number=normalized_phone).exists()
+    return JsonResponse({'allowed': bool(exists)})
