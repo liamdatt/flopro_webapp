@@ -150,31 +150,6 @@
             border: 1px solid var(--gray-200);
         }
 
-        .confirmation-input {
-            width: 100%;
-            padding: 1rem;
-            border: 2px solid var(--gray-300);
-            border-radius: 8px;
-            font-size: 1rem;
-            margin-bottom: 1rem;
-            transition: border-color 0.3s ease;
-        }
-
-        .confirmation-input:focus {
-            outline: none;
-            border-color: var(--error);
-            box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.1);
-        }
-
-        .confirmation-text {
-            background: var(--gray-100);
-            padding: 1rem;
-            border-radius: 8px;
-            font-family: monospace;
-            font-weight: 600;
-            color: var(--error);
-            margin-bottom: 1rem;
-        }
 
         .actions {
             display: flex;
@@ -368,25 +343,14 @@
 
         <div class="confirmation-section">
             <h2 class="section-title">
-                <i class="fas fa-keyboard"></i>
-                Confirmation Required
+                <i class="fas fa-exclamation-triangle"></i>
+                Final Confirmation
             </h2>
-            <p style="margin-bottom: 1rem; color: var(--gray-600);">
-                To confirm account deletion, please type the following text exactly as shown:
+            <p style="margin-bottom: 1.5rem; color: var(--gray-600); text-align: center; font-size: 1.1rem;">
+                Are you absolutely sure you want to delete your account? This action cannot be undone.
             </p>
-            <div class="confirmation-text">
-                delete {{ user.username }}
-            </div>
             <form method="post">
                 {% csrf_token %}
-                <input
-                    type="text"
-                    name="confirmation"
-                    class="confirmation-input"
-                    placeholder="Type the confirmation text here..."
-                    required
-                    autocomplete="off"
-                >
                 <div class="actions">
                     <a href="{% url 'core:dashboard' %}" class="btn btn-secondary">
                         <i class="fas fa-arrow-left"></i>
@@ -394,7 +358,7 @@
                     </a>
                     <button type="submit" class="btn btn-danger">
                         <i class="fas fa-trash-alt"></i>
-                        Delete Account Permanently
+                        Yes, Delete My Account
                     </button>
                 </div>
             </form>

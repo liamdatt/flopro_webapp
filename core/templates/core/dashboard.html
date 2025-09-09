@@ -828,33 +828,6 @@
             </div>
         </div>
 
-        <!-- Account Settings -->
-        <div class="account-settings">
-            <div class="account-settings-header">
-                <h3 class="account-settings-title">Account Settings</h3>
-                <p class="account-settings-subtitle">Manage your account and data</p>
-            </div>
-            <div class="account-settings-content">
-                <div class="settings-card danger-card">
-                    <div class="settings-card-icon">
-                        <i class="fas fa-exclamation-triangle"></i>
-                    </div>
-                    <div class="settings-card-content">
-                        <h4 class="settings-card-title">Delete Account</h4>
-                        <p class="settings-card-description">
-                            Permanently delete your account and all associated data. This action cannot be undone.
-                        </p>
-                    </div>
-                    <div class="settings-card-actions">
-                        <a href="{% url 'core:delete_account' %}" class="btn btn-danger">
-                            <i class="fas fa-trash-alt"></i>
-                            Delete Account
-                        </a>
-                    </div>
-                </div>
-            </div>
-        </div>
-
         <!-- Active Service -->
         {% if active_service %}
         <div class="active-service">
@@ -973,6 +946,33 @@
                 </a>
             </div>
             {% endif %}
+        </div>
+
+        <!-- Account Settings -->
+        <div class="account-settings">
+            <div class="account-settings-header">
+                <h3 class="account-settings-title">Account Settings</h3>
+                <p class="account-settings-subtitle">Manage your account and data</p>
+            </div>
+            <div class="account-settings-content">
+                <div class="settings-card danger-card">
+                    <div class="settings-card-icon">
+                        <i class="fas fa-exclamation-triangle"></i>
+                    </div>
+                    <div class="settings-card-content">
+                        <h4 class="settings-card-title">Delete Account</h4>
+                        <p class="settings-card-description">
+                            Permanently delete your account and all associated data. This action cannot be undone.
+                        </p>
+                    </div>
+                    <div class="settings-card-actions">
+                        <a href="{% url 'core:delete_account' %}" class="btn btn-danger">
+                            <i class="fas fa-trash-alt"></i>
+                            Delete Account
+                        </a>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 

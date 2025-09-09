@@ -107,7 +107,7 @@
             border-radius: 24px;
             padding: 3rem;
             width: 100%;
-            max-width: 450px;
+            max-width: 500px;
             backdrop-filter: blur(20px) saturate(180%);
             box-shadow: var(--shadow-glow);
             position: relative;
@@ -215,6 +215,124 @@
 
         .form-input:focus + .input-icon {
             color: var(--primary-blue);
+        }
+
+        .phone-input-container {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.3rem;
+            flex-wrap: nowrap;
+            width: 100%;
+            padding: 0 0.5rem;
+        }
+
+        .country-display {
+            display: flex;
+            align-items: center;
+            gap: 0.2rem;
+            padding: 1rem 0.6rem;
+            background: var(--glass-primary);
+            border: 1px solid var(--glass-border);
+            border-radius: 12px;
+            backdrop-filter: blur(10px);
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            min-width: 78px;
+            flex-shrink: 0;
+        }
+
+        .country-display:hover {
+            border-color: var(--primary-blue);
+            background: rgba(255, 255, 255, 0.15);
+        }
+
+        .country-display:focus {
+            outline: 2px solid var(--primary-blue);
+            outline-offset: 2px;
+        }
+
+        #countryFlag {
+            font-size: 1.2rem;
+        }
+
+        #countryCode {
+            color: var(--pure-white);
+            font-weight: 600;
+            font-size: 0.9rem;
+        }
+
+        .country-selector {
+            width: 100%;
+            padding: 1rem 1.25rem;
+            background: var(--glass-primary);
+            border: 1px solid var(--glass-border);
+            border-radius: 12px;
+            font-size: 1rem;
+            color: var(--pure-white);
+            backdrop-filter: blur(10px);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            font-family: inherit;
+            cursor: pointer;
+        }
+
+        .country-selector:focus {
+            outline: none;
+            border-color: var(--primary-blue);
+            box-shadow: 0 0 0 3px rgba(0, 102, 255, 0.2);
+            background: rgba(255, 255, 255, 0.15);
+        }
+
+        .country-selector option {
+            background: var(--tertiary-black);
+            color: var(--pure-white);
+        }
+
+        .phone-number-fields {
+            display: flex;
+            align-items: center;
+            gap: 0.25rem;
+            flex: 1;
+        }
+
+        .phone-part {
+            padding: 1rem 0.3rem;
+            background: var(--glass-primary);
+            border: 1px solid var(--glass-border);
+            border-radius: 8px;
+            font-size: 0.85rem;
+            color: var(--pure-white);
+            backdrop-filter: blur(10px);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            font-family: inherit;
+            text-align: center;
+            flex: 1;
+            min-width: 0;
+            max-width: 3.2rem;
+        }
+
+        .area-code-input {
+            max-width: 3.2rem;
+            flex: 0 0 3.2rem;
+        }
+
+        .phone-part:focus {
+            outline: none;
+            border-color: var(--primary-blue);
+            box-shadow: 0 0 0 3px rgba(0, 102, 255, 0.2);
+            background: rgba(255, 255, 255, 0.15);
+        }
+
+        .phone-part::placeholder {
+            color: var(--medium-gray);
+        }
+
+        .phone-separator {
+            color: var(--pure-white);
+            font-weight: 600;
+            font-size: 1rem;
+            margin: 0 0.05rem;
+            flex-shrink: 0;
         }
 
         .form-help {
@@ -423,7 +541,7 @@
             .auth-container {
                 margin: 0;
                 padding: 2rem;
-                max-width: none;
+                max-width: 480px;
             }
 
             .logo {
@@ -450,6 +568,84 @@
 
             .btn {
                 padding: 0.875rem 1.5rem;
+            }
+
+            .auth-container {
+                max-width: 480px;
+                padding: 2.5rem 2rem;
+            }
+
+            .phone-input-container {
+                gap: 0.3rem;
+            }
+
+            .country-display {
+                min-width: 70px;
+                padding: 0.875rem 0.4rem;
+            }
+
+            #countryFlag {
+                font-size: 0.95rem;
+            }
+
+            #countryCode {
+                font-size: 0.8rem;
+            }
+
+            .phone-part {
+                padding: 0.875rem 0.25rem;
+                font-size: 0.8rem;
+                max-width: 2.8rem;
+            }
+
+            .area-code-input {
+                max-width: 2.8rem;
+                flex: 0 0 2.8rem;
+            }
+
+            .phone-separator {
+                font-size: 1rem;
+                margin: 0 0.05rem;
+            }
+        }
+
+        @media (max-width: 360px) {
+            .auth-container {
+                max-width: 450px;
+                padding: 2rem 1.5rem;
+            }
+
+            .phone-input-container {
+                gap: 0.2rem;
+            }
+
+            .country-display {
+                min-width: 60px;
+                padding: 0.75rem 0.3rem;
+            }
+
+            #countryFlag {
+                font-size: 0.85rem;
+            }
+
+            #countryCode {
+                font-size: 0.7rem;
+            }
+
+            .phone-part {
+                padding: 0.75rem 0.15rem;
+                font-size: 0.7rem;
+                max-width: 2.4rem;
+            }
+
+            .area-code-input {
+                max-width: 2.4rem;
+                flex: 0 0 2.4rem;
+            }
+
+            .phone-separator {
+                font-size: 0.9rem;
+                margin: 0 0.03rem;
             }
         }
     </style>
@@ -563,14 +759,98 @@
                 <label for="{{ form.phone_number.id_for_label }}" class="form-label">
                     Phone Number (Optional)
                 </label>
-                <input
-                    type="tel"
-                    name="{{ form.phone_number.name }}"
-                    id="{{ form.phone_number.id_for_label }}"
-                    class="form-input"
-                    placeholder="Your phone number"
-                    autocomplete="tel"
-                >
+                <div class="phone-input-container">
+                    <div class="country-display">
+                        <span id="countryFlag">🇯🇲</span>
+                        <span id="countryCode">+1</span>
+                    </div>
+                    <select id="countrySelector" class="country-selector" style="display: none;">
+                        <option value="+1" data-flag="🇯🇲" data-code="JM" selected>Jamaica</option>
+                        <option value="+1" data-flag="🇺🇸" data-code="US">United States</option>
+                        <option value="+1" data-flag="🇨🇦" data-code="CA">Canada</option>
+                        <option value="+44" data-flag="🇬🇧" data-code="GB">United Kingdom</option>
+                        <option value="+61" data-flag="🇦🇺" data-code="AU">Australia</option>
+                        <option value="+91" data-flag="🇮🇳" data-code="IN">India</option>
+                        <option value="+86" data-flag="🇨🇳" data-code="CN">China</option>
+                        <option value="+81" data-flag="🇯🇵" data-code="JP">Japan</option>
+                        <option value="+49" data-flag="🇩🇪" data-code="DE">Germany</option>
+                        <option value="+33" data-flag="🇫🇷" data-code="FR">France</option>
+                        <option value="+39" data-flag="🇮🇹" data-code="IT">Italy</option>
+                        <option value="+34" data-flag="🇪🇸" data-code="ES">Spain</option>
+                        <option value="+7" data-flag="🇷🇺" data-code="RU">Russia</option>
+                        <option value="+55" data-flag="🇧🇷" data-code="BR">Brazil</option>
+                        <option value="+27" data-flag="🇿🇦" data-code="ZA">South Africa</option>
+                        <option value="+82" data-flag="🇰🇷" data-code="KR">South Korea</option>
+                        <option value="+52" data-flag="🇲🇽" data-code="MX">Mexico</option>
+                        <option value="+31" data-flag="🇳🇱" data-code="NL">Netherlands</option>
+                        <option value="+46" data-flag="🇸🇪" data-code="SE">Sweden</option>
+                        <option value="+47" data-flag="🇳🇴" data-code="NO">Norway</option>
+                        <option value="+45" data-flag="🇩🇰" data-code="DK">Denmark</option>
+                        <option value="+41" data-flag="🇨🇭" data-code="CH">Switzerland</option>
+                        <option value="+32" data-flag="🇧🇪" data-code="BE">Belgium</option>
+                        <option value="+43" data-flag="🇦🇹" data-code="AT">Austria</option>
+                        <option value="+48" data-flag="🇵🇱" data-code="PL">Poland</option>
+                        <option value="+30" data-flag="🇬🇷" data-code="GR">Greece</option>
+                        <option value="+351" data-flag="🇵🇹" data-code="PT">Portugal</option>
+                        <option value="+353" data-flag="🇮🇪" data-code="IE">Ireland</option>
+                        <option value="+358" data-flag="🇫🇮" data-code="FI">Finland</option>
+                        <option value="+420" data-flag="🇨🇿" data-code="CZ">Czech Republic</option>
+                        <option value="+36" data-flag="🇭🇺" data-code="HU">Hungary</option>
+                        <option value="+40" data-flag="🇷🇴" data-code="RO">Romania</option>
+                        <option value="+90" data-flag="🇹🇷" data-code="TR">Turkey</option>
+                        <option value="+65" data-flag="🇸🇬" data-code="SG">Singapore</option>
+                        <option value="+60" data-flag="🇲🇾" data-code="MY">Malaysia</option>
+                        <option value="+66" data-flag="🇹🇭" data-code="TH">Thailand</option>
+                        <option value="+84" data-flag="🇻🇳" data-code="VN">Vietnam</option>
+                        <option value="+63" data-flag="🇵🇭" data-code="PH">Philippines</option>
+                        <option value="+62" data-flag="🇮🇩" data-code="ID">Indonesia</option>
+                        <option value="+20" data-flag="🇪🇬" data-code="EG">Egypt</option>
+                        <option value="+234" data-flag="🇳🇬" data-code="NG">Nigeria</option>
+                        <option value="+254" data-flag="🇰🇪" data-code="KE">Kenya</option>
+                        <option value="+971" data-flag="🇦🇪" data-code="AE">UAE</option>
+                        <option value="+966" data-flag="🇸🇦" data-code="SA">Saudi Arabia</option>
+                        <option value="+974" data-flag="🇶🇦" data-code="QA">Qatar</option>
+                        <option value="+968" data-flag="🇴🇲" data-code="OM">Oman</option>
+                        <option value="+973" data-flag="🇧🇭" data-code="BH">Bahrain</option>
+                        <option value="+965" data-flag="🇰🇼" data-code="KW">Kuwait</option>
+                        <option value="+64" data-flag="🇳🇿" data-code="NZ">New Zealand</option>
+                        <option value="+27" data-flag="🇿🇦" data-code="ZA">South Africa</option>
+                    </select>
+                    <div class="phone-number-fields">
+                        <input
+                            type="text"
+                            id="areaCodeInput"
+                            class="phone-part area-code-input"
+                            placeholder="123"
+                            maxlength="4"
+                            pattern="[0-9]{1,4}"
+                        >
+                        <span class="phone-separator">-</span>
+                        <input
+                            type="text"
+                            id="phonePart1"
+                            class="phone-part"
+                            placeholder="456"
+                            maxlength="3"
+                            pattern="[0-9]{3}"
+                        >
+                        <span class="phone-separator">-</span>
+                        <input
+                            type="text"
+                            id="phonePart2"
+                            class="phone-part"
+                            placeholder="7890"
+                            maxlength="4"
+                            pattern="[0-9]{4}"
+                        >
+                    </div>
+                    <input
+                        type="hidden"
+                        name="{{ form.phone_number.name }}"
+                        id="{{ form.phone_number.id_for_label }}"
+                        value=""
+                    >
+                </div>
                 {% if form.phone_number.errors %}
                     {% for error in form.phone_number.errors %}
                     <div class="form-error">
@@ -658,7 +938,7 @@
         function validatePasswordStrength(password) {
             const strengthMeter = document.querySelector('.strength-fill');
             const strengthText = document.querySelector('.strength-text');
-            
+
             if (!strengthMeter) return;
 
             let strength = 0;
@@ -672,14 +952,120 @@
 
             strength = checks.filter(Boolean).length;
             const percentage = (strength / 5) * 100;
-            
+
             strengthMeter.style.width = percentage + '%';
-            
+
             const strengthLabels = ['Very Weak', 'Weak', 'Fair', 'Good', 'Strong'];
             if (strengthText) {
                 strengthText.textContent = strengthLabels[strength - 1] || '';
             }
         }
+
+        // Phone number functionality
+        function initializePhoneInput() {
+            const countrySelector = document.getElementById('countrySelector');
+            const countryDisplay = document.querySelector('.country-display');
+            const countryFlag = document.getElementById('countryFlag');
+            const countryCodeDisplay = document.getElementById('countryCode');
+            const areaCodeInput = document.getElementById('areaCodeInput');
+            const phonePart1 = document.getElementById('phonePart1');
+            const phonePart2 = document.getElementById('phonePart2');
+            const hiddenPhoneInput = document.getElementById('{{ form.phone_number.id_for_label }}');
+
+            // Handle clicking on country display to show dropdown
+            countryDisplay.addEventListener('click', function() {
+                countrySelector.style.display = 'block';
+                countrySelector.focus();
+                this.style.display = 'none';
+            });
+
+            // Handle country selection
+            countrySelector.addEventListener('change', function() {
+                const selectedOption = this.options[this.selectedIndex];
+                const flag = selectedOption.getAttribute('data-flag');
+                const countryCode = selectedOption.value;
+
+                // Update display
+                countryFlag.textContent = flag;
+                countryCodeDisplay.textContent = countryCode;
+
+                // Hide dropdown and show display
+                this.style.display = 'none';
+                countryDisplay.style.display = 'flex';
+
+                updateHiddenPhoneInput();
+            });
+
+            // Handle clicking outside to close dropdown
+            document.addEventListener('click', function(e) {
+                if (!countryDisplay.contains(e.target) && !countrySelector.contains(e.target)) {
+                    countrySelector.style.display = 'none';
+                    countryDisplay.style.display = 'flex';
+                }
+            });
+
+            // Handle phone number input changes
+            function updateHiddenPhoneInput() {
+                const countryCode = countryCodeDisplay.textContent;
+                const areaCode = areaCodeInput.value;
+                const part1 = phonePart1.value;
+                const part2 = phonePart2.value;
+
+                if (areaCode && part1 && part2) {
+                    // Build the normalized phone number
+                    const normalizedPhone = countryCode.replace('+', '') + areaCode + part1 + part2;
+                    hiddenPhoneInput.value = normalizedPhone;
+                } else {
+                    hiddenPhoneInput.value = '';
+                }
+            }
+
+            // Add input event listeners
+            areaCodeInput.addEventListener('input', function() {
+                // Only allow numbers
+                this.value = this.value.replace(/\D/g, '');
+                updateHiddenPhoneInput();
+            });
+
+            phonePart1.addEventListener('input', function() {
+                // Only allow numbers
+                this.value = this.value.replace(/\D/g, '');
+
+                // Auto-focus to next field when 3 digits entered
+                if (this.value.length === 3) {
+                    phonePart2.focus();
+                }
+
+                updateHiddenPhoneInput();
+            });
+
+            phonePart2.addEventListener('input', function() {
+                // Only allow numbers
+                this.value = this.value.replace(/\D/g, '');
+                updateHiddenPhoneInput();
+            });
+
+            // Handle backspace navigation
+            phonePart2.addEventListener('keydown', function(e) {
+                if (e.key === 'Backspace' && this.value === '') {
+                    phonePart1.focus();
+                }
+            });
+
+            phonePart1.addEventListener('keydown', function(e) {
+                if (e.key === 'Backspace' && this.value === '') {
+                    areaCodeInput.focus();
+                }
+            });
+
+            // Initialize the hidden input
+            updateHiddenPhoneInput();
+        }
+
+        // Initialize phone input when page loads
+        document.addEventListener('DOMContentLoaded', function() {
+            initializePhoneInput();
+        });
     </script>
 </body>
 </html>

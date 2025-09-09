@@ -392,53 +392,47 @@ def toggle_service(request, service_slug):
 def delete_account(request):
     """Handle account deletion with confirmation."""
     if request.method == 'POST':
-        # Check for confirmation
-        confirmation = request.POST.get('confirmation', '').strip().lower()
-        if confirmation == f'delete {request.user.username}':
-            try:
-                # Get user data before deletion for logging
-                user_data = {
-                    'username': request.user.username,
-                    'email': request.user.email,
-                    'phone': getattr(request.user.profile, 'phone_number', None) if hasattr(request.user, 'profile') else None,
-                    'services_count': UserWorkflow.objects.filter(user=request.user).count(),
-                    'transactions_count': Transaction.objects.filter(phone_number=getattr(request.user.profile, 'phone_number', '') if hasattr(request.user, 'profile') else '').count()
-                }
+        try:
+            # Get user data before deletion for logging
+            user_data = {
+                'username': request.user.username,
+                'email': request.user.email,
+                'phone': getattr(request.user.profile, 'phone_number', None) if hasattr(request.user, 'profile') else None,
+                'services_count': UserWorkflow.objects.filter(user=request.user).count(),
+                'transactions_count': Transaction.objects.filter(phone_number=getattr(request.user.profile, 'phone_number', '') if hasattr(request.user, 'profile') else '').count()
+            }
 
-                # Delete all related data
-                # Delete UserWorkflows (this handles the relationship to services)
-                UserWorkflow.objects.filter(user=request.user).delete()
+            # Delete all related data
+            # Delete UserWorkflows (this handles the relationship to services)
+            UserWorkflow.objects.filter(user=request.user).delete()
 
-                # Delete BudgetService entries
-                if hasattr(request.user, 'profile') and request.user.profile.phone_number:
-                    BudgetService.objects.filter(phone_number=request.user.profile.phone_number).delete()
+            # Delete BudgetService entries
+            if hasattr(request.user, 'profile') and request.user.profile.phone_number:
+                BudgetService.objects.filter(phone_number=request.user.profile.phone_number).delete()
 
-                # Delete transactions associated with this user's phone number
-                if hasattr(request.user, 'profile') and request.user.profile.phone_number:
-                    Transaction.objects.filter(phone_number=request.user.profile.phone_number).delete()
+            # Delete transactions associated with this user's phone number
+            if hasattr(request.user, 'profile') and request.user.profile.phone_number:
+                Transaction.objects.filter(phone_number=request.user.profile.phone_number).delete()
 
-                # Store user reference before logout
-                user_to_delete = request.user
+            # Store user reference before logout
+            user_to_delete = request.user
 
-                # Delete the user (this will cascade to UserProfile due to OneToOneField)
-                user_to_delete.delete()
+            # Delete the user (this will cascade to UserProfile due to OneToOneField)
+            user_to_delete.delete()
 
-                # Now logout (this will set request.user to AnonymousUser)
-                from django.contrib.auth import logout
-                logout(request)
+            # Now logout (this will set request.user to AnonymousUser)
+            from django.contrib.auth import logout
+            logout(request)
 
-                # Log the deletion (you might want to log this elsewhere)
-                print(f"Account deleted: {user_data}")
+            # Log the deletion (you might want to log this elsewhere)
+            print(f"Account deleted: {user_data}")
 
-                messages.success(request, 'Your account has been permanently deleted.')
-                return redirect('core:landing_page')
+            messages.success(request, 'Your account has been permanently deleted.')
+            return redirect('core:landing_page')
 
-            except Exception as e:
-                messages.error(request, f'Error deleting account: {str(e)}')
-                return redirect('core:dashboard')
-        else:
-            messages.error(request, 'Confirmation text does not match. Account not deleted.')
-            return redirect('core:delete_account')
+        except Exception as e:
+            messages.error(request, f'Error deleting account: {str(e)}')
+            return redirect('core:dashboard')
 
     # GET request - show confirmation page
     context = {
