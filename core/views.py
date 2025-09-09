@@ -312,7 +312,7 @@ def n8n_webhook(request, workflow_id):
 def api_budget_remaining(request):
     """Return remaining budget for a phone number: budget - sum(transactions)."""
     from django.conf import settings
-    if request.method != 'GET':
+    if request.method not in ('GET', 'POST'):
         return JsonResponse({'error': 'Method not allowed'}, status=405)
 
     # Accept X-API-Key, Authorization: Bearer <key>, Authorization: <key>, or ?api_key=
@@ -330,6 +330,12 @@ def api_budget_remaining(request):
         return JsonResponse({'error': 'Unauthorized'}, status=401)
 
     phone = request.GET.get('phone')
+    if request.method == 'POST' and not phone:
+        try:
+            body = json.loads(request.body or '{}')
+        except Exception:
+            body = {}
+        phone = body.get('phone') or body.get('phone_number') or request.POST.get('phone') or request.POST.get('phone_number')
     if not phone:
         return JsonResponse({'error': 'phone required'}, status=400)
 
