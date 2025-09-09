@@ -315,7 +315,17 @@ def api_budget_remaining(request):
     if request.method != 'GET':
         return JsonResponse({'error': 'Method not allowed'}, status=405)
 
-    api_key = request.headers.get('X-API-Key') or request.GET.get('api_key')
+    # Accept X-API-Key, Authorization: Bearer <key>, Authorization: <key>, or ?api_key=
+    auth_header = request.headers.get('Authorization')
+    bearer = None
+    if auth_header:
+        parts = auth_header.split(' ', 1)
+        if len(parts) == 2 and parts[0].lower() == 'bearer':
+            bearer = parts[1].strip()
+        else:
+            bearer = auth_header.strip()
+
+    api_key = request.headers.get('X-API-Key') or bearer or request.GET.get('api_key')
     if not settings.INTERNAL_API_KEY or api_key != settings.INTERNAL_API_KEY:
         return JsonResponse({'error': 'Unauthorized'}, status=401)
 
@@ -351,7 +361,17 @@ def api_add_transaction(request):
     if request.method != 'POST':
         return JsonResponse({'error': 'Method not allowed'}, status=405)
 
-    api_key = request.headers.get('X-API-Key') or request.GET.get('api_key')
+    # Accept X-API-Key, Authorization: Bearer <key>, Authorization: <key>, or ?api_key=
+    auth_header = request.headers.get('Authorization')
+    bearer = None
+    if auth_header:
+        parts = auth_header.split(' ', 1)
+        if len(parts) == 2 and parts[0].lower() == 'bearer':
+            bearer = parts[1].strip()
+        else:
+            bearer = auth_header.strip()
+
+    api_key = request.headers.get('X-API-Key') or bearer or request.GET.get('api_key')
     if not settings.INTERNAL_API_KEY or api_key != settings.INTERNAL_API_KEY:
         return JsonResponse({'error': 'Unauthorized'}, status=401)
 
