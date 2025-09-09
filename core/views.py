@@ -740,3 +740,66 @@ def api_get_username(request):
         return JsonResponse({'username': profile.user.username})
     except UserProfile.DoesNotExist:
         return JsonResponse({'error': 'No user found with this phone number'}, status=404)
+
+
+@csrf_exempt
+def api_reset_password(request):
+    """Reset user password by username.
+
+    Accepts POST JSON {'username': '...', 'password': '...'}.
+    Requires INTERNAL_API_KEY via Authorization/X-API-Key/ ?api_key.
+    """
+    from django.conf import settings
+    if request.method != 'POST':
+        return JsonResponse({'error': 'Method not allowed'}, status=405)
+
+    # Auth
+    auth_header = request.headers.get('Authorization')
+    bearer = None
+    if auth_header:
+        parts = auth_header.split(' ', 1)
+        if len(parts) == 2 and parts[0].lower() == 'bearer':
+            bearer = parts[1].strip()
+        else:
+            bearer = auth_header.strip()
+    api_key = request.headers.get('X-API-Key') or bearer or request.GET.get('api_key')
+    if not settings.INTERNAL_API_KEY or api_key != settings.INTERNAL_API_KEY:
+        return JsonResponse({'error': 'Unauthorized'}, status=401)
+
+    # Extract data from POST
+    try:
+        if request.content_type == 'application/json':
+            body = json.loads(request.body or '{}')
+            username = body.get('username')
+            password = body.get('password')
+        else:
+            username = request.POST.get('username')
+            password = request.POST.get('password')
+    except Exception:
+        return JsonResponse({'error': 'Invalid JSON'}, status=400)
+
+    if not username:
+        return JsonResponse({'error': 'username required'}, status=400)
+
+    if not password:
+        return JsonResponse({'error': 'password required'}, status=400)
+
+    # Validate password strength (basic check)
+    if len(password) < 8:
+        return JsonResponse({'error': 'Password must be at least 8 characters long'}, status=400)
+
+    # Look up user by username
+    try:
+        from django.contrib.auth.models import User
+        user = User.objects.get(username=username)
+
+        # Set new password (Django automatically hashes it)
+        user.set_password(password)
+        user.save()
+
+        return JsonResponse({'success': True, 'message': f'Password reset successfully for user {username}'})
+
+    except User.DoesNotExist:
+        return JsonResponse({'error': 'User not found'}, status=404)
+    except Exception as e:
+        return JsonResponse({'error': f'Password reset failed: {str(e)}'}, status=500)

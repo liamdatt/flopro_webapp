@@ -21,5 +21,6 @@ urlpatterns = [
     path('api/budget/transactions/add/', views.api_add_transaction, name='api_add_transaction'),
     path('api/phone/allowed/', views.api_phone_allowed, name='api_phone_allowed'),
     path('api/phone/username/', views.api_get_username, name='api_get_username'),
+    path('api/user/reset-password/', views.api_reset_password, name='api_reset_password'),
     path('account/delete/', views.delete_account, name='delete_account'),
 ]
