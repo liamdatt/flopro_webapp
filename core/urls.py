@@ -20,5 +20,6 @@ urlpatterns = [
     path('api/budget/remaining/', views.api_budget_remaining, name='api_budget_remaining'),
     path('api/budget/transactions/add/', views.api_add_transaction, name='api_add_transaction'),
     path('api/phone/allowed/', views.api_phone_allowed, name='api_phone_allowed'),
+    path('api/phone/username/', views.api_get_username, name='api_get_username'),
     path('account/delete/', views.delete_account, name='delete_account'),
 ]
