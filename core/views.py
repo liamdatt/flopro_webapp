@@ -9,7 +9,7 @@ from django.views.decorators.csrf import csrf_exempt
 from django import forms
 import json
 
-from .models import Service, UserWorkflow, BudgetService, Transaction
+from .models import Service, UserWorkflow, BudgetService, Transaction, UserProfile
 from .provisioning import provision_user_workflow, toggle_user_service, get_active_service
 from .n8n_client import N8nClient
 
@@ -25,6 +25,21 @@ class CustomUserCreationForm(UserCreationForm):
     class Meta:
         model = UserCreationForm.Meta.model
         fields = UserCreationForm.Meta.fields + ('phone_number',)
+
+    def clean_phone_number(self):
+        """Validate that the phone number is unique."""
+        phone = self.cleaned_data.get('phone_number')
+        if phone:
+            # Normalize the phone number for comparison
+            normalized = ''.join(c for c in phone if c.isdigit() or c == '+')
+            if normalized.startswith('+'):
+                normalized = normalized[1:]
+
+            # Check if this normalized phone number already exists
+            if UserProfile.objects.filter(phone_number=normalized).exists():
+                raise forms.ValidationError("This phone number is already in use by another account. Please use a different phone number.")
+
+        return phone
 
     def save(self, commit=True):
         user = super().save(commit=commit)
@@ -164,6 +179,12 @@ def service_detail(request, service_slug):
                     normalized_phone = normalized_phone[1:]
                 if getattr(request.user, 'profile', None) is not None:
                     if request.user.profile.phone_number != normalized_phone:
+                        # Check if the new phone number is already in use by another user
+                        existing_profile = UserProfile.objects.filter(phone_number=normalized_phone).exclude(user=request.user).first()
+                        if existing_profile:
+                            messages.error(request, 'This phone number is already in use by another account. Please use a different phone number.')
+                            raise ValueError('Phone number already in use')
+
                         request.user.profile.phone_number = normalized_phone
                         request.user.profile.save(update_fields=['phone_number'])
 

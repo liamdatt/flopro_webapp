@@ -6,7 +6,7 @@ from django.utils import timezone
 class UserProfile(models.Model):
     """Profile data for a Django auth user (e.g., phone number)."""
     user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='profile')
-    phone_number = models.CharField(max_length=20, blank=True, null=True)
+    phone_number = models.CharField(max_length=20, blank=True, null=True, unique=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
