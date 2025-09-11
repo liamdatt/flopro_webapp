@@ -9,7 +9,6 @@ from django.views.decorators.csrf import csrf_exempt
 from django import forms
 import json
 import os
-from urllib.parse import quote
 
 from .models import Service, UserWorkflow, BudgetService, Transaction, UserProfile
 from django.utils import timezone
@@ -604,8 +603,7 @@ def handle_oauth_flow(request, service):
         )
 
         # Redirect user to n8n authorize URL for Gmail (which will prompt for both scopes)
-        # Use the correct OAuth auth endpoint
-        authorize_url = f"{client.base}{client.api_prefix}/oauth2-credential/auth?id={primary_cred_id}&redirectAfterAuth={quote(return_uri, safe='')}"
+        authorize_url = client.build_oauth_authorize_url(primary_cred_id, return_uri)
         return redirect(authorize_url)
 
     except Exception as e:
