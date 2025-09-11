@@ -19,6 +19,10 @@ DEBUG = os.environ.get('DJANGO_DEBUG', 'False').lower() == 'true'
 N8N_API_BASE_URL = os.environ.get('N8N_API_BASE_URL', '')
 N8N_API_KEY = os.environ.get('N8N_API_KEY', '')
 
+# Google OAuth configuration
+GOOGLE_CLIENT_ID = os.environ.get('GOOGLE_CLIENT_ID', '')
+GOOGLE_CLIENT_SECRET = os.environ.get('GOOGLE_CLIENT_SECRET', '')
+
 # Accept hosts from env. In prod, set DJANGO_ALLOWED_HOSTS="app.example.com"
 ALLOWED_HOSTS = (
     os.environ.get('DJANGO_ALLOWED_HOSTS', '').split(',')

@@ -7,4 +7,7 @@ whitenoise==6.9.0
 psycopg2-binary>=2.9
 requests>=2.31.0
 python-dotenv>=1.0.1
+google-auth==2.26.0
+google-auth-oauthlib==1.2.0
+google-api-python-client==2.153.0
 

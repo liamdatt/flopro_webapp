@@ -72,6 +72,10 @@ POSTGRES_PORT=5432
 # n8n Configuration
 N8N_API_BASE_URL=https://your-n8n-instance.com
 N8N_API_KEY=your-n8n-api-key
+
+# Google OAuth (webapp manages Gmail/Calendar access)
+GOOGLE_CLIENT_ID=your-google-client-id
+GOOGLE_CLIENT_SECRET=your-google-client-secret
 ```
 
 4. **Run migrations:**
@@ -153,11 +157,10 @@ Uses `X-N8N-API-KEY` header for n8n API authentication.
 
 ### OAuth2 Flow
 
-For OAuth2 services (like Gmail or Google Calendar):
-1. User provides OAuth credentials through Django form
-2. Django creates n8n credential
-3. Workflow is provisioned with credential reference
-4. n8n handles OAuth authorization flow
+The webapp now manages Google OAuth directly:
+1. Users authorize Gmail and Calendar access via the webapp's OAuth screen
+2. Refresh tokens are stored securely in the database
+3. n8n calls internal API endpoints to act on behalf of users without storing Google credentials
 
 ## Security Considerations
 
