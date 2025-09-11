@@ -1070,22 +1070,43 @@
             const formData = new FormData(this);
             const serviceSlug = formData.get('service_slug');
 
+            console.log('Switching to service:', serviceSlug);
+
             // Show loading state
             const button = this.querySelector('button[type="submit"]');
             const originalText = button.innerHTML;
             button.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Switching...';
             button.disabled = true;
 
+            // Get CSRF token from the form
+            const csrfToken = this.querySelector('[name=csrfmiddlewaretoken]');
+            if (!csrfToken) {
+                console.error('CSRF token not found');
+                showMessage('CSRF token not found. Please refresh the page.', 'error');
+                button.innerHTML = originalText;
+                button.disabled = false;
+                return;
+            }
+
+            console.log('CSRF token found:', csrfToken.value.substring(0, 10) + '...');
+            console.log('Making request to:', `{% url 'core:toggle_service' %}`);
+
             fetch(`{% url 'core:toggle_service' %}`, {
                 method: 'POST',
                 headers: {
-                    'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+                    'X-CSRFToken': csrfToken.value,
                     'Content-Type': 'application/json',
                 },
+                credentials: 'same-origin',  // Include cookies for authentication
                 body: JSON.stringify({ service_slug: serviceSlug })
             })
-            .then(response => response.json())
+            .then(response => {
+                console.log('Response status:', response.status);
+                console.log('Response headers:', response.headers);
+                return response.json();
+            })
             .then(data => {
+                console.log('Response data:', data);
                 if (data.success) {
                     // Reload the page to update the UI
                     window.location.reload();
@@ -1097,6 +1118,7 @@
                 }
             })
             .catch(error => {
+                console.error('Network error:', error);
                 showMessage('Network error. Please try again.', 'error');
                 button.innerHTML = originalText;
                 button.disabled = false;
