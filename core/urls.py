@@ -15,6 +15,7 @@ urlpatterns = [
     path('service/<slug:service_slug>/transactions/<int:tx_id>/delete/', views.delete_transaction, name='delete_transaction'),
     path('service/<slug:service_slug>/unlock/', views.unlock_service, name='unlock_service'),
     path('service/<slug:service_slug>/toggle/', views.toggle_service, name='toggle_service'),
+    path('oauth/callback/<slug:service_slug>/', views.oauth_callback, name='oauth_callback'),
     path('webhook/<int:workflow_id>/', views.n8n_webhook, name='n8n_webhook'),
     # Internal APIs for Budget Tracker (called by n8n)
     path('api/budget/remaining/', views.api_budget_remaining, name='api_budget_remaining'),

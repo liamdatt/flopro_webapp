@@ -1,5 +1,7 @@
 import os
+from urllib.parse import quote
 import requests
+from requests import HTTPError
 from typing import Dict, List, Optional, Any
 
 
@@ -8,16 +10,40 @@ class N8nClient:
 
     def __init__(self, base_url: Optional[str] = None, api_key: Optional[str] = None):
         self.base = (base_url or os.environ.get("N8N_API_BASE_URL", "")).rstrip("/")
+        # Use public API prefix per docs; allow override (e.g., to 'rest')
+        api_prefix = os.environ.get("N8N_API_PREFIX", "/api/v1").strip()
+        if not api_prefix.startswith("/"):
+            api_prefix = f"/{api_prefix}"
+        self.api_prefix = api_prefix.rstrip("/")
+        key = (api_key or os.environ.get("N8N_API_KEY", "")).strip()
+
+        if not self.base:
+            raise RuntimeError("N8N_API_BASE_URL is not set")
+        if not key:
+            raise RuntimeError("N8N_API_KEY is not set")
+
+        # Send both n8n header and Authorization bearer to satisfy some proxies
         self.headers = {
-            "X-N8N-API-KEY": api_key or os.environ.get("N8N_API_KEY", ""),
+            "X-N8N-API-KEY": key,
+            "Authorization": f"Bearer {key}",
             "Content-Type": "application/json",
+            "Accept": "application/json",
         }
 
     def _make_request(self, method: str, endpoint: str, **kwargs) -> Dict[str, Any]:
         """Make an HTTP request to n8n API"""
-        url = f"{self.base}/rest{endpoint}"
+        # endpoint should start with '/'
+        url = f"{self.base}{self.api_prefix}{endpoint}"
         response = requests.request(method, url, headers=self.headers, **kwargs)
-        response.raise_for_status()
+        try:
+            response.raise_for_status()
+        except HTTPError as exc:
+            # Include response body for easier diagnosis (but not headers)
+            msg = f"{exc} | url={url} | status={response.status_code} | body={response.text[:500]}"
+            raise HTTPError(msg, response=response) from exc
+        # Some endpoints may return no JSON
+        if not response.content:
+            return {}
         return response.json()
 
     def get_workflow(self, workflow_id: int) -> Dict[str, Any]:
@@ -76,3 +102,13 @@ class N8nClient:
         """Execute a workflow in n8n"""
         payload = {"data": data} if data else {}
         return self._make_request("POST", f"/workflows/{workflow_id}/execute", json=payload)
+
+    def build_oauth_authorize_url(self, credential_id: int, return_url: str) -> str:
+        """Return the n8n OAuth authorize URL for a given credential id.
+
+        n8n expects the following parameters:
+        - id: the numeric credential id
+        - redirectAfterAuth: absolute URL to redirect back to after OAuth completes
+        """
+        # Use the correct OAuth auth endpoint
+        return f"{self.base}/rest/oauth2-credential/auth?id={credential_id}&redirectAfterAuth={quote(return_url, safe='')}"

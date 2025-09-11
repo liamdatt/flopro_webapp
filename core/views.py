@@ -8,10 +8,15 @@ from django.views.decorators.http import require_POST
 from django.views.decorators.csrf import csrf_exempt
 from django import forms
 import json
+import os
+from urllib.parse import quote
 
 from .models import Service, UserWorkflow, BudgetService, Transaction, UserProfile
-from .provisioning import provision_user_workflow, toggle_user_service, get_active_service
+from django.utils import timezone
+from django.urls import reverse
+from .provisioning import provision_user_workflow, toggle_user_service, get_active_service, provision_user_workflow_with_credentials_map
 from .n8n_client import N8nClient
+from requests import HTTPError
 
 
 class CustomUserCreationForm(UserCreationForm):
@@ -503,33 +508,154 @@ def unlock_service(request, service_slug):
 
 
 def handle_oauth_flow(request, service):
-    """Handle OAuth2 flow for Google services like Gmail and Calendar."""
-    # For OAuth2 services, we need to initiate the OAuth flow through n8n
-    # This is a simplified implementation - in production you'd want to:
-    # 1. Create a temporary credential in n8n with the user's OAuth data
-    # 2. Redirect to n8n's OAuth authorization URL
-    # 3. Handle the callback and store the final credential ID
-
+    """Start OAuth2 via n8n for Google services (Gmail + Calendar)."""
     try:
+        # Require Google client config in environment
+        client_id = os.environ.get("GOOGLE_OAUTH_CLIENT_ID")
+        client_secret = os.environ.get("GOOGLE_OAUTH_CLIENT_SECRET")
+        if not client_id or not client_secret:
+            raise RuntimeError("Missing GOOGLE_OAUTH_CLIENT_ID/GOOGLE_OAUTH_CLIENT_SECRET")
+
         client = N8nClient()
 
-        # For Google OAuth2, we'll create a credential and let n8n handle the OAuth flow
-        # In a real implementation, you'd redirect to n8n's OAuth endpoint
-        credential_data = extract_credential_data(request.POST, service)
+        # Create both Gmail and Calendar credentials with appropriate scopes
+        timestamp = int(timezone.now().timestamp())
+        base_name = f"{service.slug}:{request.user.id}:{timestamp}"
 
-        # Create the workflow and credential (n8n will handle OAuth completion)
-        workflow_id, credential_id = provision_user_workflow(
-            user=request.user,
-            service=service,
-            credential_data=credential_data
+        credentials_created = {}
+
+        # 1. Create Gmail OAuth2 credential
+        try:
+            gmail_cred = client.create_credential(
+                name=f"{base_name}:gmail",
+                cred_type="gmailOAuth2",
+                data={
+                    "clientId": client_id,
+                    "clientSecret": client_secret,
+                    "sendAdditionalBodyProperties": False,
+                    "additionalBodyProperties": {},
+                },
+                node_types=["n8n-nodes-base.gmailTool"],
+            )
+            credentials_created["gmailOAuth2"] = gmail_cred["id"]
+        except HTTPError as e:
+            if getattr(e, 'response', None) and e.response.status_code == 400:
+                # Fall back to googleOAuth2 if gmailOAuth2 not supported
+                gmail_cred = client.create_credential(
+                    name=f"{base_name}:gmail",
+                    cred_type="googleOAuth2",
+                    data={
+                        "clientId": client_id,
+                        "clientSecret": client_secret,
+                        "sendAdditionalBodyProperties": False,
+                        "additionalBodyProperties": {},
+                    },
+                    node_types=["n8n-nodes-base.gmailTool"],
+                )
+                credentials_created["gmailOAuth2"] = gmail_cred["id"]
+            else:
+                raise
+
+        # 2. Create Google Calendar OAuth2 credential
+        try:
+            calendar_cred = client.create_credential(
+                name=f"{base_name}:calendar",
+                cred_type="googleCalendarOAuth2Api",
+                data={
+                    "clientId": client_id,
+                    "clientSecret": client_secret,
+                    "sendAdditionalBodyProperties": False,
+                    "additionalBodyProperties": {},
+                },
+                node_types=["n8n-nodes-base.googleCalendarTool"],
+            )
+            credentials_created["googleCalendarOAuth2Api"] = calendar_cred["id"]
+        except HTTPError as e:
+            if getattr(e, 'response', None) and e.response.status_code == 400:
+                # Fall back to googleOAuth2 if googleCalendarOAuth2Api not supported
+                calendar_cred = client.create_credential(
+                    name=f"{base_name}:calendar",
+                    cred_type="googleOAuth2",
+                    data={
+                        "clientId": client_id,
+                        "clientSecret": client_secret,
+                        "sendAdditionalBodyProperties": False,
+                        "additionalBodyProperties": {},
+                    },
+                    node_types=["n8n-nodes-base.googleCalendarTool"],
+                )
+                credentials_created["googleCalendarOAuth2Api"] = calendar_cred["id"]
+            else:
+                raise
+
+        # Persist pending state for callback finalization
+        request.session["oauth_pending"] = {
+            "service_slug": service.slug,
+            "credentials": credentials_created,
+        }
+
+        # For OAuth flow, we'll use the Gmail credential for authorization
+        # (since Gmail scope includes basic Google OAuth, and Calendar will be authorized separately)
+        primary_cred_id = credentials_created["gmailOAuth2"]
+
+        # Callback after n8n completes Google OAuth
+        return_uri = request.build_absolute_uri(
+            reverse("core:oauth_callback", kwargs={"service_slug": service.slug})
         )
 
-        messages.success(request, f"Successfully set up {service.name}! OAuth flow will complete through n8n.")
-        return redirect('dashboard')
+        # Redirect user to n8n authorize URL for Gmail (which will prompt for both scopes)
+        # Use the correct OAuth auth endpoint
+        authorize_url = f"{client.base}{client.api_prefix}/oauth2-credential/auth?id={primary_cred_id}&redirectAfterAuth={quote(return_uri, safe='')}"
+        return redirect(authorize_url)
 
     except Exception as e:
         messages.error(request, f"OAuth setup failed: {str(e)}")
-        return redirect('service_detail', service_slug=service.slug)
+        return redirect('core:service_detail', service_slug=service.slug)
+
+
+@login_required
+def oauth_callback(request, service_slug):
+    """Finalize OAuth: clone template workflow and attach the authorized credentials."""
+    service = get_object_or_404(Service, slug=service_slug, is_active=True)
+
+    state = request.session.get("oauth_pending") or {}
+    if state.get("service_slug") != service.slug:
+        messages.error(request, "Invalid or missing OAuth session state.")
+        return redirect('core:service_detail', service_slug=service.slug)
+
+    credentials = state.get("credentials", {})
+    if not credentials:
+        messages.error(request, "Missing credentials.")
+        return redirect('core:service_detail', service_slug=service.slug)
+
+    try:
+        # Create mapping of credential type to credential ID
+        credential_type_to_id = {
+            "gmailOAuth2": int(credentials["gmailOAuth2"]),
+            "googleCalendarOAuth2Api": int(credentials["googleCalendarOAuth2Api"]),
+        }
+
+        # Create mapping of node type to credential ID
+        node_type_to_credential_id = {
+            "n8n-nodes-base.gmailTool": credential_type_to_id["gmailOAuth2"],
+            "n8n-nodes-base.googleCalendarTool": credential_type_to_id["googleCalendarOAuth2Api"],
+        }
+
+        # Create user-specific workflow wired to these credentials
+        provision_user_workflow_with_credentials_map(
+            user=request.user,
+            service=service,
+            node_type_to_credential_id=node_type_to_credential_id,
+        )
+
+        # Clear session state
+        request.session.pop("oauth_pending", None)
+
+        messages.success(request, f"Successfully unlocked {service.name}!")
+        return redirect('core:dashboard')
+    except Exception as e:
+        messages.error(request, f"Finalization failed: {str(e)}")
+        return redirect('core:service_detail', service_slug=service.slug)
 
 
 def extract_credential_data(post_data, service):

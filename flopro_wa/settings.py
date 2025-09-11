@@ -2,8 +2,12 @@
 
 from pathlib import Path
 import os
+from dotenv import load_dotenv
 
 BASE_DIR = Path(__file__).resolve().parent.parent
+
+# Load environment variables from .env at project root (if present)
+load_dotenv(BASE_DIR / '.env')
 
 # ---- Security & env-driven config ----
 # IMPORTANT: never keep a real secret here. Read from env with a safe default for dev.

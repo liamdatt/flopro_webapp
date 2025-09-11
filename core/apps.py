@@ -22,7 +22,8 @@ class CoreConfig(AppConfig):
                     "description": "AI assistant that reads your Gmail and manages Google Calendar events.",
                     "icon": "fas fa-user-astronaut",
                     "template_workflow_id": 2,
-                    "credential_type": "googleOAuth2",
+                    # Use Gmail OAuth2 for credential creation; we'll also wire Calendar nodes
+                    "credential_type": "gmailOAuth2",
                     "credential_ui_schema": {
                         "phone_number": {
                             "type": "text",
@@ -33,8 +34,8 @@ class CoreConfig(AppConfig):
                         }
                     },
                     "credential_node_types": [
-                        "n8n-nodes-base.gmail",
-                        "n8n-nodes-base.googleCalendar",
+                        "n8n-nodes-base.gmailTool",
+                        "n8n-nodes-base.googleCalendarTool",
                     ],
                     "is_active": True,
                 },
