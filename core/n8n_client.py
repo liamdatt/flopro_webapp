@@ -1,5 +1,4 @@
 import os
-from urllib.parse import quote
 import requests
 from requests import HTTPError
 from typing import Dict, List, Optional, Any
@@ -10,11 +9,17 @@ class N8nClient:
 
     def __init__(self, base_url: Optional[str] = None, api_key: Optional[str] = None):
         self.base = (base_url or os.environ.get("N8N_API_BASE_URL", "")).rstrip("/")
-        # Use public API prefix per docs; allow override (e.g., to 'rest')
+        # Use public API prefix per docs; allow override
         api_prefix = os.environ.get("N8N_API_PREFIX", "/api/v1").strip()
         if not api_prefix.startswith("/"):
             api_prefix = f"/{api_prefix}"
         self.api_prefix = api_prefix.rstrip("/")
+
+        # UI prefix handles routes not exposed via the public API
+        ui_prefix = os.environ.get("N8N_UI_PREFIX", "/rest").strip()
+        if not ui_prefix.startswith("/"):
+            ui_prefix = f"/{ui_prefix}"
+        self.ui_prefix = ui_prefix.rstrip("/")
         key = (api_key or os.environ.get("N8N_API_KEY", "")).strip()
 
         if not self.base:
@@ -104,11 +109,29 @@ class N8nClient:
         return self._make_request("POST", f"/workflows/{workflow_id}/execute", json=payload)
 
     def build_oauth_authorize_url(self, credential_id: int, return_url: str) -> str:
-        """Return the n8n OAuth authorize URL for a given credential id.
+        """Get provider OAuth URL for a credential via n8n.
 
-        n8n expects the following parameters:
-        - id: the numeric credential id
-        - redirectAfterAuth: absolute URL to redirect back to after OAuth completes
+        This endpoint is normally hit by the n8n editor which includes the
+        session cookie.  When calling it programmatically we need to supply the
+        API key and capture the `Location` header of the redirect to the OAuth
+        provider.  The returned URL can then be used to redirect the end user.
+
+        Args:
+            credential_id: ID of the credential in n8n
+            return_url: Absolute URL n8n should redirect to after auth
         """
-        # Use the correct OAuth auth endpoint
-        return f"{self.base}/rest/oauth2-credential/auth?id={credential_id}&redirectAfterAuth={quote(return_url, safe='')}"
+        # Construct endpoint using UI prefix which exposes the OAuth route
+        url = f"{self.base}{self.ui_prefix}/oauth2-credential/auth"
+        params = {
+            "credentialId": credential_id,
+            "redirectAfterAuth": return_url,
+        }
+        # Request without following redirects so we can extract provider URL
+        response = requests.get(
+            url, headers=self.headers, params=params, allow_redirects=False
+        )
+        if response.status_code not in (200, 302) or "location" not in response.headers:
+            msg = f"Failed to initiate OAuth: status={response.status_code} body={response.text[:200]}"
+            raise HTTPError(msg, response=response)
+        # n8n responds with a 302 redirect to the provider
+        return response.headers["location"]

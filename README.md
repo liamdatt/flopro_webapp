@@ -72,6 +72,8 @@ POSTGRES_PORT=5432
 # n8n Configuration
 N8N_API_BASE_URL=https://your-n8n-instance.com
 N8N_API_KEY=your-n8n-api-key
+N8N_API_PREFIX=/api/v1  # optional, defaults to /api/v1
+N8N_UI_PREFIX=/rest     # optional, defaults to /rest
 ```
 
 4. **Run migrations:**
