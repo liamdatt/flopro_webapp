@@ -232,7 +232,7 @@ def service_detail(request, service_slug):
             if service.slug == 'ultimate-personal-assistant':
                 # Ensure phone number is available
                 phone = request.POST.get('phone_number') or (
-                    getattr(request.user, 'profile', None) and request.user.profile.phone_number
+                    hasattr(request.user, 'profile') and request.user.profile.phone_number
                 )
 
                 if not phone:
@@ -243,17 +243,26 @@ def service_detail(request, service_slug):
                 normalized_phone = ''.join(c for c in phone if c.isdigit() or c == '+')
                 if normalized_phone.startswith('+'):
                     normalized_phone = normalized_phone[1:]
-                if getattr(request.user, 'profile', None) is not None:
-                    if request.user.profile.phone_number != normalized_phone:
-                        existing_profile = UserProfile.objects.filter(phone_number=normalized_phone).exclude(user=request.user).first()
-                        if existing_profile:
-                            messages.error(request, 'This phone number is already in use by another account. Please use a different phone number.')
-                            raise ValueError('Phone number already in use')
-                        request.user.profile.phone_number = normalized_phone
-                        request.user.profile.save(update_fields=['phone_number'])
 
-                # Continue with OAuth provisioning
-                return handle_oauth_flow(request, service)
+                # Ensure user has a profile
+                if not hasattr(request.user, 'profile'):
+                    UserProfile.objects.create(user=request.user, phone_number=normalized_phone)
+                elif request.user.profile.phone_number != normalized_phone:
+                    existing_profile = UserProfile.objects.filter(phone_number=normalized_phone).exclude(user=request.user).first()
+                    if existing_profile:
+                        messages.error(request, 'This phone number is already in use by another account. Please use a different phone number.')
+                        raise ValueError('Phone number already in use')
+                    request.user.profile.phone_number = normalized_phone
+                    request.user.profile.save(update_fields=['phone_number'])
+
+                # Store service info for post-OAuth callback
+                request.session['pending_service_unlock'] = {
+                    'service_slug': service.slug,
+                    'phone_number': normalized_phone,
+                }
+
+                # Redirect to webapp Google OAuth flow
+                return redirect('core:google_oauth_start')
 
             if service.credential_type == 'googleOAuth2':
                 # For OAuth2, redirect to n8n for authorization
@@ -956,38 +965,88 @@ def google_oauth_start(request):
     return redirect(authorization_url)
 
 
-@login_required
 def google_oauth_callback(request):
+    # Check if user is authenticated
+    if not request.user.is_authenticated:
+        messages.error(request, "You must be logged in to complete OAuth.")
+        return redirect('core:login')
+
     state = request.session.get('google_oauth_state')
-    flow = Flow.from_client_config(
-        {
-            "web": {
-                "client_id": settings.GOOGLE_CLIENT_ID,
-                "client_secret": settings.GOOGLE_CLIENT_SECRET,
-                "auth_uri": "https://accounts.google.com/o/oauth2/auth",
-                "token_uri": "https://oauth2.googleapis.com/token",
-                "redirect_uris": [request.build_absolute_uri(reverse('core:google_oauth_callback'))],
-            }
-        },
-        scopes=[
-            "https://www.googleapis.com/auth/gmail.modify",
-            "https://www.googleapis.com/auth/calendar",
-        ],
-        state=state,
-    )
-    flow.redirect_uri = request.build_absolute_uri(reverse('core:google_oauth_callback'))
-    authorization_response = request.build_absolute_uri()
-    flow.fetch_token(authorization_response=authorization_response)
-    creds = flow.credentials
-    GoogleCredential.objects.update_or_create(
-        user=request.user,
-        defaults={
-            'refresh_token': creds.refresh_token,
-            'access_token': creds.token,
-            'token_expiry': creds.expiry,
-            'scopes': ' '.join(creds.scopes or []),
-        },
-    )
+    if not state:
+        messages.error(request, "OAuth session expired. Please try again.")
+        return redirect('core:dashboard')
+
+    try:
+        flow = Flow.from_client_config(
+            {
+                "web": {
+                    "client_id": settings.GOOGLE_CLIENT_ID,
+                    "client_secret": settings.GOOGLE_CLIENT_SECRET,
+                    "auth_uri": "https://accounts.google.com/o/oauth2/auth",
+                    "token_uri": "https://oauth2.googleapis.com/token",
+                    "redirect_uris": [request.build_absolute_uri(reverse('core:google_oauth_callback'))],
+                }
+            },
+            scopes=[
+                "https://www.googleapis.com/auth/gmail.modify",
+                "https://www.googleapis.com/auth/calendar",
+            ],
+            state=state,
+        )
+        flow.redirect_uri = request.build_absolute_uri(reverse('core:google_oauth_callback'))
+        authorization_response = request.build_absolute_uri()
+        flow.fetch_token(authorization_response=authorization_response)
+        creds = flow.credentials
+
+        # Save Google credentials
+        GoogleCredential.objects.update_or_create(
+            user=request.user,
+            defaults={
+                'refresh_token': creds.refresh_token,
+                'access_token': creds.token,
+                'token_expiry': creds.expiry,
+                'scopes': ' '.join(creds.scopes or []),
+            },
+        )
+
+        # Check for pending service unlock
+        pending_service = request.session.get('pending_service_unlock')
+        if pending_service:
+            service_slug = pending_service['service_slug']
+            try:
+                service = Service.objects.get(slug=service_slug, is_active=True)
+
+                # Check if user already has this service
+                if not UserWorkflow.objects.filter(user=request.user, service=service).exists():
+                    # Mark service as unlocked without n8n resources (handled by webapp)
+                    UserWorkflow.objects.update_or_create(
+                        user=request.user,
+                        service=service,
+                        defaults={
+                            'name': f"{service.name} - {request.user.username}",
+                            'active': True,
+                            'n8n_workflow_id': None,  # No n8n workflow needed
+                            'n8n_credential_id': None,  # No n8n credentials needed
+                        }
+                    )
+                    messages.success(request, f"Successfully unlocked {service.name}!")
+
+                # Clear pending service unlock
+                request.session.pop('pending_service_unlock', None)
+
+            except Service.DoesNotExist:
+                messages.error(request, f"Service {service_slug} not found.")
+            except Exception as e:
+                messages.error(request, f"Failed to unlock service: {str(e)}")
+        else:
+            messages.success(request, "Google account connected successfully!")
+
+        # Clear OAuth state
+        request.session.pop('google_oauth_state', None)
+
+    except Exception as e:
+        messages.error(request, f"OAuth failed: {str(e)}")
+
     return redirect('core:dashboard')
 
 
