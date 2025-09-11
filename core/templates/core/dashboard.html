@@ -944,43 +944,43 @@
                     </div>
                     <p class="service-description">{{ service.description }}</p>
                     <div class="service-actions">
-                        {% with user_workflows|dictsort:"service.name" as sorted_workflows %}
-                            {% for uw in sorted_workflows %}
-                                {% if uw.service == service %}
-                                    {% if service == active_service %}
-                                        <span class="btn btn-success">
-                                            <i class="fas fa-check"></i>
-                                            Currently Active
-                                        </span>
-                                        {% if service.slug == 'budget-tracker' %}
-                                        <a href="{% url 'core:service_overview' service.slug %}" class="btn btn-secondary">
-                                            <i class="fas fa-eye"></i>
-                                            View
-                                        </a>
-                                        {% endif %}
-                                    {% else %}
-                                        <form method="post" action="{% url 'core:toggle_service' service.slug %}" style="display: inline;">
-                                            {% csrf_token %}
-                                            <button type="submit" class="btn btn-primary">
-                                                <i class="fas fa-play"></i>
-                                                Activate
-                                            </button>
-                                        </form>
-                                        {% if service.slug == 'budget-tracker' %}
-                                        <a href="{% url 'core:service_overview' service.slug %}" class="btn btn-secondary">
-                                            <i class="fas fa-eye"></i>
-                                            View
-                                        </a>
-                                        {% endif %}
-                                    {% endif %}
-                                {% endif %}
-                            {% empty %}
-                                <a href="{% url 'core:service_detail' service.slug %}" class="btn btn-primary">
-                                    <i class="fas fa-unlock"></i>
-                                    Unlock Service
+                        {% if service.is_unlocked %}
+                            {% comment %} User has this service unlocked {% endcomment %}
+                            {% if service.is_active %}
+                                {% comment %} This is the active service {% endcomment %}
+                                <span class="btn btn-success">
+                                    <i class="fas fa-check"></i>
+                                    Currently Active
+                                </span>
+                                {% if service.slug == 'budget-tracker' %}
+                                <a href="{% url 'core:service_overview' service.slug %}" class="btn btn-secondary">
+                                    <i class="fas fa-eye"></i>
+                                    View
                                 </a>
-                            {% endfor %}
-                        {% endwith %}
+                                {% endif %}
+                            {% else %}
+                                {% comment %} User has service but it's not active {% endcomment %}
+                                <form method="post" action="{% url 'core:toggle_service_slug' service.slug %}" style="display: inline;">
+                                    {% csrf_token %}
+                                    <button type="submit" class="btn btn-primary">
+                                        <i class="fas fa-play"></i>
+                                        Activate
+                                    </button>
+                                </form>
+                                {% if service.slug == 'budget-tracker' %}
+                                <a href="{% url 'core:service_overview' service.slug %}" class="btn btn-secondary">
+                                    <i class="fas fa-eye"></i>
+                                    View
+                                </a>
+                                {% endif %}
+                            {% endif %}
+                        {% else %}
+                            {% comment %} User doesn't have this service - show unlock button {% endcomment %}
+                            <a href="{% url 'core:service_detail' service.slug %}" class="btn btn-primary">
+                                <i class="fas fa-unlock"></i>
+                                Unlock Service
+                            </a>
+                        {% endif %}
                     </div>
                 </div>
                 {% endfor %}

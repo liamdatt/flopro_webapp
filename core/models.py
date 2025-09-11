@@ -22,11 +22,7 @@ class Service(models.Model):
     description = models.TextField(help_text="Description of what this service does")
     icon = models.CharField(max_length=50, blank=True, help_text="FontAwesome icon class")
 
-    # n8n-specific fields
-    template_workflow_id = models.PositiveIntegerField(help_text="n8n workflow ID of the template")
-    credential_type = models.CharField(max_length=50, help_text="n8n credential type (e.g., 'googleOAuth2', 'httpBasicAuth')")
-    credential_ui_schema = models.JSONField(help_text="JSON schema for credential input form fields")
-    credential_node_types = models.JSONField(help_text="List of n8n node types that use this credential")
+    # Service is now purely informational - all functionality handled by webapp
 
     # Service status
     is_active = models.BooleanField(default=True, help_text="Whether this service is available to users")

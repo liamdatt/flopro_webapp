@@ -27,7 +27,7 @@ GOOGLE_CLIENT_SECRET = os.environ.get('GOOGLE_CLIENT_SECRET', '')
 ALLOWED_HOSTS = (
     os.environ.get('DJANGO_ALLOWED_HOSTS', '').split(',')
     if os.environ.get('DJANGO_ALLOWED_HOSTS')
-    else ['localhost', '127.0.0.1']
+    else ['localhost', '127.0.0.1', '0.0.0.0']
 )
 
 # Needed for POST forms/cookies when served behind Cloudflare

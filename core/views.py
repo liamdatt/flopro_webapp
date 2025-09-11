@@ -22,8 +22,7 @@ import uuid
 from datetime import datetime
 from django.utils import timezone
 from django.urls import reverse
-from .provisioning import provision_user_workflow, toggle_user_service, get_active_service, provision_user_workflow_with_credentials_map
-from .n8n_client import N8nClient
+from .provisioning import unlock_service_for_user, toggle_user_service, get_active_service
 from requests import HTTPError
 
 
@@ -140,10 +139,19 @@ def dashboard(request):
     user_workflows = UserWorkflow.objects.filter(user=request.user).select_related('service')
     active_service = get_active_service(request.user)
 
+    # Create a set of unlocked service IDs for easier template logic
+    unlocked_service_ids = set(uw.service.id for uw in user_workflows)
+
+    # Add service status to each service object for template use
+    for service in services:
+        service.is_unlocked = service.id in unlocked_service_ids
+        service.is_active = (active_service and service == active_service)
+
     context = {
         'services': services,
         'user_workflows': user_workflows,
         'active_service': active_service,
+        'unlocked_service_ids': unlocked_service_ids,
     }
     return render(request, 'core/dashboard.html', context)
 
@@ -163,82 +171,15 @@ def service_detail(request, service_slug):
     if request.method == 'POST':
         # Handle credential form submission
         try:
-            if service.slug == 'budget-tracker':
-                # Ensure phone and budget are provided
-                phone = request.POST.get('phone_number') or (getattr(request.user, 'profile', None) and request.user.profile.phone_number)
-                budget_raw = request.POST.get('budget_amount')
-
-                # Check if phone is required (only if user doesn't have one in profile)
-                user_has_phone = (
-                    hasattr(request.user, 'profile') and
-                    request.user.profile.phone_number and
-                    request.user.profile.phone_number.strip()
-                )
-
-                if not phone:
-                    if user_has_phone:
-                        phone = request.user.profile.phone_number
-                    else:
-                        messages.error(request, 'Phone number is required.')
-                        raise ValueError('Missing phone number')
-
-                if not budget_raw:
-                    messages.error(request, 'Budget amount is required.')
-                    raise ValueError('Missing budget amount')
-
-                # Normalize and save phone on user if changed
-                normalized_phone = ''.join(c for c in phone if c.isdigit() or c == '+')
-                if normalized_phone.startswith('+'):
-                    normalized_phone = normalized_phone[1:]
-                if getattr(request.user, 'profile', None) is not None:
-                    if request.user.profile.phone_number != normalized_phone:
-                        # Check if the new phone number is already in use by another user
-                        existing_profile = UserProfile.objects.filter(phone_number=normalized_phone).exclude(user=request.user).first()
-                        if existing_profile:
-                            messages.error(request, 'This phone number is already in use by another account. Please use a different phone number.')
-                            raise ValueError('Phone number already in use')
-
-                        request.user.profile.phone_number = normalized_phone
-                        request.user.profile.save(update_fields=['phone_number'])
-
-                # Upsert BudgetService
-                from decimal import Decimal
-                try:
-                    budget_amount = Decimal(budget_raw)
-                except Exception:
-                    messages.error(request, 'Invalid budget amount.')
-                    raise
-
-                BudgetService.objects.update_or_create(
-                    user=request.user,
-                    phone_number=normalized_phone,
-                    defaults={'budget_amount': budget_amount}
-                )
-
-                # Mark service as unlocked without n8n resources
-                UserWorkflow.objects.update_or_create(
-                    user=request.user,
-                    service=service,
-                    defaults={
-                        'name': f"{service.name} - {request.user.username}",
-                        'active': True,
-                        'n8n_workflow_id': None,
-                        'n8n_credential_id': None,
-                    }
-                )
-
-                messages.success(request, f"Successfully unlocked {service.name}!")
-                return redirect('core:dashboard')
-
-            if service.slug == 'ultimate-personal-assistant':
-                # Ensure phone number is available
+            # Handle phone number for services that need it
+            if service.slug in ['budget-tracker', 'ultimate-personal-assistant']:
                 phone = request.POST.get('phone_number') or (
                     hasattr(request.user, 'profile') and request.user.profile.phone_number
                 )
 
                 if not phone:
                     messages.error(request, 'Phone number is required.')
-                    raise ValueError('Missing phone number')
+                    return redirect('core:service_detail', service_slug=service.slug)
 
                 # Normalize and save phone on user if changed or missing
                 normalized_phone = ''.join(c for c in phone if c.isdigit() or c == '+')
@@ -252,38 +193,62 @@ def service_detail(request, service_slug):
                     existing_profile = UserProfile.objects.filter(phone_number=normalized_phone).exclude(user=request.user).first()
                     if existing_profile:
                         messages.error(request, 'This phone number is already in use by another account. Please use a different phone number.')
-                        raise ValueError('Phone number already in use')
+                        return redirect('core:service_detail', service_slug=service.slug)
                     request.user.profile.phone_number = normalized_phone
                     request.user.profile.save(update_fields=['phone_number'])
 
+                # Handle budget tracker specific setup
+                if service.slug == 'budget-tracker':
+                    budget_raw = request.POST.get('budget_amount')
+                    if not budget_raw:
+                        messages.error(request, 'Budget amount is required.')
+                        return redirect('core:service_detail', service_slug=service.slug)
+
+                    # Upsert BudgetService
+                    from decimal import Decimal
+                    try:
+                        budget_amount = Decimal(budget_raw)
+                    except Exception:
+                        messages.error(request, 'Invalid budget amount.')
+                        return redirect('core:service_detail', service_slug=service.slug)
+
+                    BudgetService.objects.update_or_create(
+                        user=request.user,
+                        phone_number=normalized_phone,
+                        defaults={'budget_amount': budget_amount}
+                    )
+
+            # Handle service-specific unlocking
+            if service.slug == 'ultimate-personal-assistant':
                 # Store service info for post-OAuth callback
                 request.session['pending_service_unlock'] = {
                     'service_slug': service.slug,
                     'phone_number': normalized_phone,
                 }
 
-                # Redirect to webapp Google OAuth flow
-                return redirect('core:google_oauth_start')
+                # Redirect to Google OAuth flow - this is the ONLY path for Ultimate Personal Assistant
+                try:
+                    return redirect('core:google_oauth_start')
+                except Exception as oauth_error:
+                    print(f"OAuth redirect error: {oauth_error}")  # Debug logging
+                    messages.error(request, f"OAuth setup failed: {str(oauth_error)}")
+                    return redirect('core:service_detail', service_slug=service.slug)
 
-            if service.credential_type == 'googleOAuth2':
-                # For OAuth2, redirect to n8n for authorization
-                return handle_oauth_flow(request, service)
-            else:
-                # Handle other credential types
-                credential_data = extract_credential_data(request.POST, service)
-                workflow_id, credential_id = provision_user_workflow(
-                    user=request.user,
-                    service=service,
-                    credential_data=credential_data
-                )
+            # For other services (like Budget Tracker), use regular unlocking
+            if unlock_service_for_user(user=request.user, service=service):
                 messages.success(request, f"Successfully unlocked {service.name}!")
-                return redirect('core:dashboard')
+            else:
+                messages.warning(request, f"You already have {service.name} unlocked.")
+
+            return redirect('core:dashboard')
 
         except Exception as e:
+            print(f"Service unlock error: {e}")  # Debug logging
             messages.error(request, f"Failed to unlock service: {str(e)}")
+            return redirect('core:service_detail', service_slug=service.slug)
 
-    # Modify schema based on user's phone number status for services that need it
-    credential_schema = service.credential_ui_schema.copy() if service.credential_ui_schema else {}
+    # Service-specific handling
+    credential_schema = {}
     needs_phone = service.slug in ['budget-tracker', 'ultimate-personal-assistant']
 
     user_has_phone = False
@@ -294,13 +259,8 @@ def service_detail(request, service_slug):
             request.user.profile.phone_number.strip()
         )
 
-        if user_has_phone:
-            # Remove phone_number field from schema since user already provided it
-            credential_schema.pop('phone_number', None)
-        else:
-            # Keep phone_number field but make it required
-            if 'phone_number' in credential_schema:
-                credential_schema['phone_number']['required'] = True
+        # For services that need phone, we handle it in the template
+        # No need to modify credential_schema since it's empty
 
     context = {
         'service': service,
@@ -458,31 +418,44 @@ def delete_account(request):
     """Handle account deletion with confirmation."""
     if request.method == 'POST':
         try:
+            # Get user profile safely
+            user_profile = None
+            phone_number = None
+            try:
+                user_profile = request.user.profile
+                phone_number = user_profile.phone_number
+            except:
+                pass  # Profile might not exist
+
             # Get user data before deletion for logging
             user_data = {
                 'username': request.user.username,
                 'email': request.user.email,
-                'phone': getattr(request.user.profile, 'phone_number', None) if hasattr(request.user, 'profile') else None,
+                'phone': phone_number,
                 'services_count': UserWorkflow.objects.filter(user=request.user).count(),
-                'transactions_count': Transaction.objects.filter(phone_number=getattr(request.user.profile, 'phone_number', '') if hasattr(request.user, 'profile') else '').count()
+                'transactions_count': Transaction.objects.filter(phone_number=phone_number).count() if phone_number else 0,
+                'has_google_creds': GoogleCredential.objects.filter(user=request.user).exists()
             }
 
-            # Delete all related data
-            # Delete UserWorkflows (this handles the relationship to services)
+            # Delete all related data in proper order
+            # 1. Delete UserWorkflows (this handles the relationship to services)
             UserWorkflow.objects.filter(user=request.user).delete()
 
-            # Delete BudgetService entries
-            if hasattr(request.user, 'profile') and request.user.profile.phone_number:
-                BudgetService.objects.filter(phone_number=request.user.profile.phone_number).delete()
+            # 2. Delete BudgetService entries
+            if phone_number:
+                BudgetService.objects.filter(phone_number=phone_number).delete()
 
-            # Delete transactions associated with this user's phone number
-            if hasattr(request.user, 'profile') and request.user.profile.phone_number:
-                Transaction.objects.filter(phone_number=request.user.profile.phone_number).delete()
+            # 3. Delete transactions associated with this user's phone number
+            if phone_number:
+                Transaction.objects.filter(phone_number=phone_number).delete()
+
+            # 4. Delete Google credentials (explicitly, though CASCADE should handle this)
+            GoogleCredential.objects.filter(user=request.user).delete()
 
             # Store user reference before logout
             user_to_delete = request.user
 
-            # Delete the user (this will cascade to UserProfile due to OneToOneField)
+            # Delete the user (this will cascade to UserProfile and any other related models)
             user_to_delete.delete()
 
             # Now logout (this will set request.user to AnonymousUser)
@@ -500,13 +473,17 @@ def delete_account(request):
             return redirect('core:dashboard')
 
     # GET request - show confirmation page
+    phone_number = None
+    try:
+        phone_number = request.user.profile.phone_number
+    except:
+        pass  # Profile might not exist
+
     context = {
         'user_workflows': UserWorkflow.objects.filter(user=request.user),
-        'budget_services': BudgetService.objects.filter(user=request.user) if hasattr(request.user, 'profile') else [],
-        'transactions': Transaction.objects.filter(
-            phone_number=getattr(request.user.profile, 'phone_number', '')
-        ) if hasattr(request.user, 'profile') else [],
-        'has_phone': hasattr(request.user, 'profile') and request.user.profile.phone_number,
+        'budget_services': BudgetService.objects.filter(user=request.user) if phone_number else [],
+        'transactions': Transaction.objects.filter(phone_number=phone_number) if phone_number else [],
+        'has_phone': bool(phone_number),
     }
     return render(request, 'core/delete_account.html', context)
 
@@ -543,185 +520,26 @@ def unlock_service(request, service_slug):
         return JsonResponse({'success': False, 'error': str(e)})
 
 
-def handle_oauth_flow(request, service):
-    """Start OAuth2 via n8n for Google services (Gmail + Calendar)."""
-    try:
-        # Require Google client config in environment
-        client_id = os.environ.get("GOOGLE_OAUTH_CLIENT_ID")
-        client_secret = os.environ.get("GOOGLE_OAUTH_CLIENT_SECRET")
-        if not client_id or not client_secret:
-            raise RuntimeError("Missing GOOGLE_OAUTH_CLIENT_ID/GOOGLE_OAUTH_CLIENT_SECRET")
-
-        client = N8nClient()
-
-        # Create both Gmail and Calendar credentials with appropriate scopes
-        timestamp = int(timezone.now().timestamp())
-        base_name = f"{service.slug}:{request.user.id}:{timestamp}"
-
-        credentials_created = {}
-
-        # 1. Create Gmail OAuth2 credential
-        try:
-            gmail_cred = client.create_credential(
-                name=f"{base_name}:gmail",
-                cred_type="gmailOAuth2",
-                data={
-                    "clientId": client_id,
-                    "clientSecret": client_secret,
-                    "sendAdditionalBodyProperties": False,
-                    "additionalBodyProperties": {},
-                },
-                node_types=["n8n-nodes-base.gmailTool"],
-            )
-            credentials_created["gmailOAuth2"] = gmail_cred["id"]
-        except HTTPError as e:
-            if getattr(e, 'response', None) and e.response.status_code == 400:
-                # Fall back to googleOAuth2 if gmailOAuth2 not supported
-                gmail_cred = client.create_credential(
-                    name=f"{base_name}:gmail",
-                    cred_type="googleOAuth2",
-                    data={
-                        "clientId": client_id,
-                        "clientSecret": client_secret,
-                        "sendAdditionalBodyProperties": False,
-                        "additionalBodyProperties": {},
-                    },
-                    node_types=["n8n-nodes-base.gmailTool"],
-                )
-                credentials_created["gmailOAuth2"] = gmail_cred["id"]
-            else:
-                raise
-
-        # 2. Create Google Calendar OAuth2 credential
-        try:
-            calendar_cred = client.create_credential(
-                name=f"{base_name}:calendar",
-                cred_type="googleCalendarOAuth2Api",
-                data={
-                    "clientId": client_id,
-                    "clientSecret": client_secret,
-                    "sendAdditionalBodyProperties": False,
-                    "additionalBodyProperties": {},
-                },
-                node_types=["n8n-nodes-base.googleCalendarTool"],
-            )
-            credentials_created["googleCalendarOAuth2Api"] = calendar_cred["id"]
-        except HTTPError as e:
-            if getattr(e, 'response', None) and e.response.status_code == 400:
-                # Fall back to googleOAuth2 if googleCalendarOAuth2Api not supported
-                calendar_cred = client.create_credential(
-                    name=f"{base_name}:calendar",
-                    cred_type="googleOAuth2",
-                    data={
-                        "clientId": client_id,
-                        "clientSecret": client_secret,
-                        "sendAdditionalBodyProperties": False,
-                        "additionalBodyProperties": {},
-                    },
-                    node_types=["n8n-nodes-base.googleCalendarTool"],
-                )
-                credentials_created["googleCalendarOAuth2Api"] = calendar_cred["id"]
-            else:
-                raise
-
-        # Persist pending state for callback finalization
-        request.session["oauth_pending"] = {
-            "service_slug": service.slug,
-            "credentials": credentials_created,
-        }
-
-        # For OAuth flow, we'll use the Gmail credential for authorization
-        # (since Gmail scope includes basic Google OAuth, and Calendar will be authorized separately)
-        primary_cred_id = credentials_created["gmailOAuth2"]
-
-        # Callback after n8n completes Google OAuth
-        return_uri = request.build_absolute_uri(
-            reverse("core:oauth_callback", kwargs={"service_slug": service.slug})
-        )
-
-        # Redirect user to n8n authorize URL for Gmail (which will prompt for both scopes)
-        authorize_url = client.build_oauth_authorize_url(primary_cred_id, return_uri)
-        return redirect(authorize_url)
-
-    except Exception as e:
-        messages.error(request, f"OAuth setup failed: {str(e)}")
-        return redirect('core:service_detail', service_slug=service.slug)
+# handle_oauth_flow function removed - n8n integration no longer needed
 
 
-@login_required
-def oauth_callback(request, service_slug):
-    """Finalize OAuth: clone template workflow and attach the authorized credentials."""
-    service = get_object_or_404(Service, slug=service_slug, is_active=True)
-
-    state = request.session.get("oauth_pending") or {}
-    if state.get("service_slug") != service.slug:
-        messages.error(request, "Invalid or missing OAuth session state.")
-        return redirect('core:service_detail', service_slug=service.slug)
-
-    credentials = state.get("credentials", {})
-    if not credentials:
-        messages.error(request, "Missing credentials.")
-        return redirect('core:service_detail', service_slug=service.slug)
-
-    try:
-        # Create mapping of credential type to credential ID
-        credential_type_to_id = {
-            "gmailOAuth2": int(credentials["gmailOAuth2"]),
-            "googleCalendarOAuth2Api": int(credentials["googleCalendarOAuth2Api"]),
-        }
-
-        # Create mapping of node type to credential ID
-        node_type_to_credential_id = {
-            "n8n-nodes-base.gmailTool": credential_type_to_id["gmailOAuth2"],
-            "n8n-nodes-base.googleCalendarTool": credential_type_to_id["googleCalendarOAuth2Api"],
-        }
-
-        # Create user-specific workflow wired to these credentials
-        provision_user_workflow_with_credentials_map(
-            user=request.user,
-            service=service,
-            node_type_to_credential_id=node_type_to_credential_id,
-        )
-
-        # Clear session state
-        request.session.pop("oauth_pending", None)
-
-        messages.success(request, f"Successfully unlocked {service.name}!")
-        return redirect('core:dashboard')
-    except Exception as e:
-        messages.error(request, f"Finalization failed: {str(e)}")
-        return redirect('core:service_detail', service_slug=service.slug)
+# oauth_callback function removed - n8n integration no longer needed
 
 
 def extract_credential_data(post_data, service):
-    """Extract credential data from POST data based on service schema."""
+    """Extract credential data from POST data - simplified since no schema."""
     credential_data = {}
 
-    # This is a simple implementation - in production you'd want more validation
-    schema = service.credential_ui_schema
-
-    for field_name, field_config in schema.items():
-        # Skip phone_number for OAuth services - it's handled separately
-        if field_name == 'phone_number' and service.credential_type == 'googleOAuth2':
-            continue
-        if field_name in post_data:
+    # Simple extraction without schema validation
+    for field_name in post_data:
+        if field_name in ['phone_number', 'budget_amount']:
             credential_data[field_name] = post_data[field_name]
 
     return credential_data
 
 
 # API endpoints for n8n webhooks (if needed)
-@csrf_exempt
-def n8n_webhook(request, workflow_id):
-    """Handle webhooks from n8n workflows."""
-    if request.method == 'POST':
-        try:
-            data = json.loads(request.body)
-            return JsonResponse({'status': 'received'})
-        except Exception as e:
-            return JsonResponse({'error': str(e)}, status=400)
-
-    return JsonResponse({'error': 'Method not allowed'}, status=405)
+# n8n_webhook function removed - n8n integration no longer needed
 
 
 def _extract_api_key(request):
@@ -1086,20 +904,11 @@ def google_oauth_callback(request):
             try:
                 service = Service.objects.get(slug=service_slug, is_active=True)
 
-                # Check if user already has this service
-                if not UserWorkflow.objects.filter(user=request.user, service=service).exists():
-                    # Mark service as unlocked without n8n resources (handled by webapp)
-                    UserWorkflow.objects.update_or_create(
-                        user=request.user,
-                        service=service,
-                        defaults={
-                            'name': f"{service.name} - {request.user.username}",
-                            'active': True,
-                            'n8n_workflow_id': None,  # No n8n workflow needed
-                            'n8n_credential_id': None,  # No n8n credentials needed
-                        }
-                    )
+                # Unlock the service using simplified logic
+                if unlock_service_for_user(user=request.user, service=service):
                     messages.success(request, f"Successfully unlocked {service.name}!")
+                else:
+                    messages.warning(request, f"You already have {service.name} unlocked.")
 
                 # Clear pending service unlock
                 request.session.pop('pending_service_unlock', None)

@@ -4,17 +4,13 @@ from .models import Service, UserWorkflow, BudgetService, Transaction
 
 @admin.register(Service)
 class ServiceAdmin(admin.ModelAdmin):
-    list_display = ['name', 'slug', 'credential_type', 'is_active', 'created_at']
-    list_filter = ['is_active', 'credential_type', 'created_at']
+    list_display = ['name', 'slug', 'is_active', 'created_at']
+    list_filter = ['is_active', 'created_at']
     search_fields = ['name', 'slug', 'description']
     readonly_fields = ['created_at', 'updated_at']
     fieldsets = (
         ('Basic Information', {
             'fields': ('slug', 'name', 'description', 'icon')
-        }),
-        ('n8n Configuration', {
-            'fields': ('template_workflow_id', 'credential_type', 'credential_ui_schema', 'credential_node_types'),
-            'classes': ('collapse',)
         }),
         ('Settings', {
             'fields': ('is_active',)
