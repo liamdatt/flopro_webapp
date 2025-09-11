@@ -16,6 +16,7 @@ from .models import Service, UserWorkflow, BudgetService, Transaction, UserProfi
 from .google_api import get_gmail_service, get_calendar_service
 from google_auth_oauthlib.flow import Flow
 from email.mime.text import MIMEText
+from email.mime.multipart import MIMEMultipart
 import base64
 import uuid
 from datetime import datetime
@@ -1065,6 +1066,7 @@ def api_google_gmail_send(request):
     to = payload.get('to')
     subject = payload.get('subject')
     body = payload.get('body')
+    content_type = payload.get('content_type')  # optional: 'html' or 'plain'
     if not all([username, to, subject, body]):
         return JsonResponse({'error': 'missing fields'}, status=400)
     try:
@@ -1072,7 +1074,11 @@ def api_google_gmail_send(request):
     except User.DoesNotExist:
         return JsonResponse({'error': 'user not found'}, status=404)
     service = get_gmail_service(user)
-    message = MIMEText(body)
+    # Build message honoring optional content_type
+    if content_type == 'html':
+        message = MIMEText(body or '', 'html')
+    else:
+        message = MIMEText(body or '', 'plain')
     message['to'] = to
     message['subject'] = subject
     raw = base64.urlsafe_b64encode(message.as_bytes()).decode()
@@ -1099,6 +1105,224 @@ def api_google_gmail_messages(request):
     label_ids = request.GET.getlist('labelIds') or None
     messages = service.users().messages().list(userId='me', q=q, labelIds=label_ids, maxResults=20).execute()
     return JsonResponse(messages)
+
+
+@csrf_exempt
+def api_google_gmail_reply(request):
+    """Reply to an email message."""
+    if request.method != 'POST':
+        return JsonResponse({'error': 'Method not allowed'}, status=405)
+    resp = _require_internal_api_key(request)
+    if resp:
+        return resp
+    try:
+        payload = json.loads(request.body or '{}')
+    except Exception:
+        return JsonResponse({'error': 'invalid json'}, status=400)
+
+    username = payload.get('external_user_id') or payload.get('username')
+    message_id = payload.get('message_id') or payload.get('thread_id')
+    body = payload.get('body')
+    subject = payload.get('subject')
+    content_type = payload.get('content_type')  # optional: 'html' or 'plain'
+
+    if not all([username, message_id, body]):
+        return JsonResponse({'error': 'username, message_id/thread_id, and body required'}, status=400)
+
+    try:
+        user = User.objects.get(username=username)
+    except User.DoesNotExist:
+        return JsonResponse({'error': 'user not found'}, status=404)
+
+    service = get_gmail_service(user)
+
+    try:
+        # Get the original message
+        message = service.users().messages().get(userId='me', id=message_id, format='full').execute()
+        thread_id = message['threadId']
+
+        # Create reply message honoring content_type
+        if content_type == 'html':
+            reply = MIMEText(body or '', 'html')
+        else:
+            reply = MIMEText(body or '', 'plain')
+
+        # Set reply headers
+        reply['to'] = message['payload']['headers'][0]['value']  # Get original sender
+        reply['subject'] = subject or f"Re: {message['payload']['headers'][1]['value']}"  # Get original subject
+        reply['In-Reply-To'] = message['payload']['headers'][2]['value'] if len(message['payload']['headers']) > 2 else ''
+        reply['References'] = message['payload']['headers'][2]['value'] if len(message['payload']['headers']) > 2 else ''
+
+        raw = base64.urlsafe_b64encode(reply.as_bytes()).decode()
+        sent = service.users().messages().send(
+            userId='me',
+            body={
+                'raw': raw,
+                'threadId': thread_id
+            }
+        ).execute()
+        return JsonResponse({'id': sent.get('id'), 'threadId': thread_id})
+
+    except Exception as e:
+        return JsonResponse({'error': f'Failed to send reply: {str(e)}'}, status=500)
+
+
+@csrf_exempt
+def api_google_gmail_draft(request):
+    """Create a draft email."""
+    if request.method != 'POST':
+        return JsonResponse({'error': 'Method not allowed'}, status=405)
+    resp = _require_internal_api_key(request)
+    if resp:
+        return resp
+    try:
+        payload = json.loads(request.body or '{}')
+    except Exception:
+        return JsonResponse({'error': 'invalid json'}, status=400)
+
+    username = payload.get('external_user_id') or payload.get('username')
+    to = payload.get('to')
+    subject = payload.get('subject')
+    body = payload.get('body')
+    content_type = payload.get('content_type')  # optional: 'html' or 'plain'
+
+    if not all([username, to, subject, body]):
+        return JsonResponse({'error': 'username, to, subject, and body required'}, status=400)
+
+    try:
+        user = User.objects.get(username=username)
+    except User.DoesNotExist:
+        return JsonResponse({'error': 'user not found'}, status=404)
+
+    service = get_gmail_service(user)
+
+    try:
+        if content_type == 'html':
+            message = MIMEText(body or '', 'html')
+        else:
+            message = MIMEText(body or '', 'plain')
+        message['to'] = to
+        message['subject'] = subject
+
+        raw = base64.urlsafe_b64encode(message.as_bytes()).decode()
+        draft = service.users().drafts().create(
+            userId='me',
+            body={'message': {'raw': raw}}
+        ).execute()
+        return JsonResponse({'id': draft.get('id'), 'message': draft.get('message', {})})
+
+    except Exception as e:
+        return JsonResponse({'error': f'Failed to create draft: {str(e)}'}, status=500)
+
+
+@csrf_exempt
+def api_google_gmail_labels(request):
+    """Get Gmail labels."""
+    if request.method != 'GET':
+        return JsonResponse({'error': 'Method not allowed'}, status=405)
+    resp = _require_internal_api_key(request)
+    if resp:
+        return resp
+
+    username = request.GET.get('external_user_id') or request.GET.get('username')
+    if not username:
+        return JsonResponse({'error': 'external_user_id required'}, status=400)
+
+    try:
+        user = User.objects.get(username=username)
+    except User.DoesNotExist:
+        return JsonResponse({'error': 'user not found'}, status=404)
+
+    service = get_gmail_service(user)
+
+    try:
+        labels = service.users().labels().list(userId='me').execute()
+        return JsonResponse({'labels': labels.get('labels', [])})
+
+    except Exception as e:
+        return JsonResponse({'error': f'Failed to get labels: {str(e)}'}, status=500)
+
+
+@csrf_exempt
+def api_google_gmail_modify_labels(request):
+    """Add or remove labels from messages."""
+    if request.method != 'POST':
+        return JsonResponse({'error': 'Method not allowed'}, status=405)
+    resp = _require_internal_api_key(request)
+    if resp:
+        return resp
+    try:
+        payload = json.loads(request.body or '{}')
+    except Exception:
+        return JsonResponse({'error': 'invalid json'}, status=400)
+
+    username = payload.get('external_user_id') or payload.get('username')
+    message_ids = payload.get('message_ids', [])
+    add_labels = payload.get('add_labels', [])
+    remove_labels = payload.get('remove_labels', [])
+
+    if not username:
+        return JsonResponse({'error': 'username required'}, status=400)
+    if not message_ids:
+        return JsonResponse({'error': 'message_ids required'}, status=400)
+
+    try:
+        user = User.objects.get(username=username)
+    except User.DoesNotExist:
+        return JsonResponse({'error': 'user not found'}, status=404)
+
+    service = get_gmail_service(user)
+
+    try:
+        results = []
+        for message_id in message_ids:
+            body = {}
+            if add_labels:
+                body['addLabelIds'] = add_labels
+            if remove_labels:
+                body['removeLabelIds'] = remove_labels
+
+            result = service.users().messages().modify(
+                userId='me',
+                id=message_id,
+                body=body
+            ).execute()
+            results.append({'message_id': message_id, 'result': result})
+
+        return JsonResponse({'results': results})
+
+    except Exception as e:
+        return JsonResponse({'error': f'Failed to modify labels: {str(e)}'}, status=500)
+
+
+@csrf_exempt
+def api_google_calendar_events_delete(request):
+    """Delete a calendar event."""
+    if request.method != 'DELETE':
+        return JsonResponse({'error': 'Method not allowed'}, status=405)
+    resp = _require_internal_api_key(request)
+    if resp:
+        return resp
+
+    event_id = request.GET.get('event_id')
+    username = request.GET.get('external_user_id') or request.GET.get('username')
+
+    if not username or not event_id:
+        return JsonResponse({'error': 'username and event_id required'}, status=400)
+
+    try:
+        user = User.objects.get(username=username)
+    except User.DoesNotExist:
+        return JsonResponse({'error': 'user not found'}, status=404)
+
+    service = get_calendar_service(user)
+
+    try:
+        result = service.events().delete(calendarId='primary', eventId=event_id).execute()
+        return JsonResponse({'status': 'deleted', 'event_id': event_id})
+
+    except Exception as e:
+        return JsonResponse({'error': f'Failed to delete event: {str(e)}'}, status=500)
 
 
 @csrf_exempt
