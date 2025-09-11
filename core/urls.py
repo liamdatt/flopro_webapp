@@ -14,7 +14,8 @@ urlpatterns = [
     path('service/<slug:service_slug>/budget/update/', views.update_budget, name='update_budget'),
     path('service/<slug:service_slug>/transactions/<int:tx_id>/delete/', views.delete_transaction, name='delete_transaction'),
     path('service/<slug:service_slug>/unlock/', views.unlock_service, name='unlock_service'),
-    path('service/<slug:service_slug>/toggle/', views.toggle_service, name='toggle_service'),
+    path('service/toggle/', views.toggle_service, name='toggle_service'),
+    path('service/<slug:service_slug>/toggle/', views.toggle_service, name='toggle_service_slug'),
     path('oauth/callback/<slug:service_slug>/', views.oauth_callback, name='oauth_callback'),
     path('webhook/<int:workflow_id>/', views.n8n_webhook, name='n8n_webhook'),
     # Internal APIs for Budget Tracker (called by n8n)
@@ -22,6 +23,7 @@ urlpatterns = [
     path('api/budget/transactions/add/', views.api_add_transaction, name='api_add_transaction'),
     path('api/phone/allowed/', views.api_phone_allowed, name='api_phone_allowed'),
     path('api/phone/username/', views.api_get_username, name='api_get_username'),
+    path('api/phone/active-service/', views.api_get_active_service, name='api_get_active_service'),
     path('api/user/reset-password/', views.api_reset_password, name='api_reset_password'),
     path('account/delete/', views.delete_account, name='delete_account'),
     # Google OAuth

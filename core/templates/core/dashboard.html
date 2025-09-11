@@ -283,6 +283,38 @@
             font-size: 1rem;
         }
 
+        /* Active Service Selector */
+        .active-service-selector {
+            margin-top: 2rem;
+            padding-top: 2rem;
+            border-top: 1px solid var(--glass-border);
+        }
+
+        .active-service-dropdown {
+            background: var(--glass-primary);
+            border: 1px solid var(--glass-border);
+            border-radius: 8px;
+            padding: 0.75rem 1rem;
+            color: var(--pure-white);
+            font-size: 0.9rem;
+            font-family: inherit;
+            min-width: 250px;
+            backdrop-filter: blur(10px);
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .active-service-dropdown:focus {
+            outline: none;
+            border-color: var(--primary-blue);
+            box-shadow: 0 0 0 2px rgba(0, 102, 255, 0.2);
+        }
+
+        .active-service-dropdown option {
+            background: var(--secondary-black);
+            color: var(--pure-white);
+        }
+
         /* Services Grid */
         .services-section {
             margin-bottom: 3rem;
@@ -844,6 +876,28 @@
                 </div>
             </div>
             <p class="active-service-description">{{ active_service.description }}</p>
+
+            <!-- Active Service Dropdown -->
+            <div class="active-service-selector">
+                <label for="active-service-select" style="display: block; margin-bottom: 0.75rem; font-weight: 600; color: var(--pure-white);">
+                    <i class="fas fa-exchange-alt" style="margin-right: 0.5rem;"></i>
+                    Switch Active Service:
+                </label>
+                <form method="post" id="active-service-form" style="display: inline;">
+                    {% csrf_token %}
+                    <select id="active-service-select" name="service_slug" class="active-service-dropdown">
+                        {% for uw in user_workflows %}
+                        <option value="{{ uw.service.slug }}" {% if uw.active %}selected{% endif %}>
+                            {{ uw.service.name }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                    <button type="submit" class="btn btn-primary" style="margin-left: 1rem; padding: 0.5rem 1rem; font-size: 0.85rem;">
+                        <i class="fas fa-check"></i>
+                        Switch
+                    </button>
+                </form>
+            </div>
         </div>
         {% endif %}
 
@@ -1008,6 +1062,70 @@
                 background.style.transform = `translateY(${rate}px)`;
             }
         });
+
+        // Handle active service switch
+        document.getElementById('active-service-form')?.addEventListener('submit', function(e) {
+            e.preventDefault();
+
+            const formData = new FormData(this);
+            const serviceSlug = formData.get('service_slug');
+
+            // Show loading state
+            const button = this.querySelector('button[type="submit"]');
+            const originalText = button.innerHTML;
+            button.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Switching...';
+            button.disabled = true;
+
+            fetch(`{% url 'core:toggle_service' %}`, {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ service_slug: serviceSlug })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // Reload the page to update the UI
+                    window.location.reload();
+                } else {
+                    // Show error message
+                    showMessage('Failed to switch service: ' + (data.error || 'Unknown error'), 'error');
+                    button.innerHTML = originalText;
+                    button.disabled = false;
+                }
+            })
+            .catch(error => {
+                showMessage('Network error. Please try again.', 'error');
+                button.innerHTML = originalText;
+                button.disabled = false;
+            });
+        });
+
+        // Helper function to show messages
+        function showMessage(message, type = 'info') {
+            const messagesContainer = document.querySelector('.messages') || document.createElement('div');
+            if (!document.querySelector('.messages')) {
+                messagesContainer.className = 'messages';
+                document.body.appendChild(messagesContainer);
+            }
+
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `message ${type}`;
+            messageDiv.innerHTML = `
+                <i class="fas fa-${type === 'error' ? 'exclamation-triangle' : type === 'warning' ? 'exclamation-circle' : 'check-circle'}"></i>
+                ${message}
+            `;
+
+            messagesContainer.appendChild(messageDiv);
+
+            // Auto-remove after 5 seconds
+            setTimeout(() => {
+                messageDiv.style.animation = 'slideIn 0.3s ease reverse';
+                setTimeout(() => messageDiv.remove(), 300);
+            }, 5000);
+        }
     </script>
 </body>
 </html>

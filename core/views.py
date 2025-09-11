@@ -422,16 +422,35 @@ def delete_transaction(request, service_slug, tx_id):
 
 @login_required
 @require_POST
-def toggle_service(request, service_slug):
+def toggle_service(request, service_slug=None):
     """Toggle between user services."""
+    # Handle AJAX requests with service_slug in POST data
+    if request.content_type == 'application/json':
+        try:
+            import json
+            data = json.loads(request.body)
+            service_slug = data.get('service_slug')
+        except:
+            return JsonResponse({'success': False, 'error': 'Invalid JSON data'})
+
+    if not service_slug:
+        if request.content_type == 'application/json':
+            return JsonResponse({'success': False, 'error': 'Service slug required'})
+        messages.error(request, 'Service slug required')
+        return redirect('core:dashboard')
+
     service = get_object_or_404(Service, slug=service_slug, is_active=True)
 
     if toggle_user_service(user=request.user, service=service):
+        if request.content_type == 'application/json':
+            return JsonResponse({'success': True, 'message': f"Switched to {service.name}"})
         messages.success(request, f"Switched to {service.name}")
     else:
+        if request.content_type == 'application/json':
+            return JsonResponse({'success': False, 'error': f"You haven't unlocked {service.name} yet"})
         messages.error(request, f"You haven't unlocked {service.name} yet")
 
-    return redirect('dashboard')
+    return redirect('core:dashboard')
 
 
 @login_required
@@ -884,6 +903,56 @@ def api_get_username(request):
         return JsonResponse({'username': profile.user.username})
     except UserProfile.DoesNotExist:
         return JsonResponse({'error': 'No user found with this phone number'}, status=404)
+
+
+@csrf_exempt
+def api_get_active_service(request):
+    """Return the active service name for a phone number.
+
+    Accepts POST JSON {'phone': '...'}.
+    Requires INTERNAL_API_KEY via Authorization/X-API-Key/ ?api_key.
+    Returns {'active_service': 'service_name'} or {'active_service': None} if no active service.
+    """
+    from django.conf import settings
+    if request.method not in ('GET', 'POST'):
+        return JsonResponse({'error': 'Method not allowed'}, status=405)
+
+    resp = _require_internal_api_key(request)
+    if resp:
+        return resp
+
+    # Phone extraction
+    phone = request.GET.get('phone')
+    if request.method == 'POST' and not phone:
+        try:
+            body = json.loads(request.body or '{}')
+        except Exception:
+            body = {}
+        phone = body.get('phone') or body.get('phone_number') or request.POST.get('phone') or request.POST.get('phone_number')
+    if not phone:
+        return JsonResponse({'error': 'phone required'}, status=400)
+
+    # Normalize phone number
+    normalized_phone = ''.join(c for c in phone if c.isdigit() or c == '+')
+    if normalized_phone.startswith('+'):
+        normalized_phone = normalized_phone[1:]
+
+    # Find user by phone number
+    try:
+        profile = UserProfile.objects.select_related('user').get(phone_number=normalized_phone)
+        user = profile.user
+
+        # Get active service for this user
+        active_service = get_active_service(user)
+        if active_service:
+            return JsonResponse({'active_service': active_service.name})
+        else:
+            return JsonResponse({'active_service': None})
+
+    except UserProfile.DoesNotExist:
+        return JsonResponse({'error': 'No user found with this phone number'}, status=404)
+    except Exception as e:
+        return JsonResponse({'error': f'Error retrieving active service: {str(e)}'}, status=500)
 
 
 @csrf_exempt
