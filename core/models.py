@@ -65,6 +65,31 @@ class UserWorkflow(models.Model):
         ordering = ['-created_at']
 
 
+class GoogleCredential(models.Model):
+    """Stores Google OAuth tokens and sync state for a user."""
+
+    user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='google_credential')
+    refresh_token = models.TextField(help_text="Long-lived refresh token")
+    access_token = models.TextField(blank=True, null=True, help_text="Short-lived access token")
+    token_expiry = models.DateTimeField(blank=True, null=True, help_text="Access token expiry")
+    scopes = models.TextField(blank=True, help_text="Space-separated OAuth scopes")
+
+    # Gmail incremental sync
+    gmail_history_id = models.CharField(max_length=255, blank=True, null=True)
+
+    # Calendar watch channel metadata
+    calendar_channel_id = models.CharField(max_length=255, blank=True, null=True)
+    calendar_resource_id = models.CharField(max_length=255, blank=True, null=True)
+    calendar_channel_expiration = models.DateTimeField(blank=True, null=True)
+    calendar_sync_token = models.CharField(max_length=255, blank=True, null=True)
+
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return f"Google creds for {self.user.username}"
+
+
 class BudgetService(models.Model):
     """Stores per-user budget configuration for the Budget Tracker service."""
 

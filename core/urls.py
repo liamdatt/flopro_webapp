@@ -24,4 +24,15 @@ urlpatterns = [
     path('api/phone/username/', views.api_get_username, name='api_get_username'),
     path('api/user/reset-password/', views.api_reset_password, name='api_reset_password'),
     path('account/delete/', views.delete_account, name='delete_account'),
+    # Google OAuth
+    path('google/oauth/start/', views.google_oauth_start, name='google_oauth_start'),
+    path('google/oauth/callback/', views.google_oauth_callback, name='google_oauth_callback'),
+    # Google API endpoints for n8n
+    path('api/google/gmail/send', views.api_google_gmail_send, name='api_google_gmail_send'),
+    path('api/google/gmail/messages', views.api_google_gmail_messages, name='api_google_gmail_messages'),
+    path('api/google/calendar/events', views.api_google_calendar_events, name='api_google_calendar_events'),
+    path('api/google/calendar/events/post', views.api_google_calendar_events_post, name='api_google_calendar_events_post'),
+    path('api/google/gmail/watch', views.api_google_gmail_watch, name='api_google_gmail_watch'),
+    path('api/google/calendar/watch', views.api_google_calendar_watch, name='api_google_calendar_watch'),
+    path('webhooks/google/calendar', views.google_calendar_webhook, name='google_calendar_webhook'),
 ]

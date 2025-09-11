@@ -3,14 +3,22 @@ from django.contrib.auth.decorators import login_required
 from django.contrib.auth.forms import UserCreationForm
 from django.contrib.auth import login
 from django.contrib import messages
-from django.http import JsonResponse
+from django.http import JsonResponse, HttpResponse
+from django.conf import settings
+from django.contrib.auth.models import User
 from django.views.decorators.http import require_POST
 from django.views.decorators.csrf import csrf_exempt
 from django import forms
 import json
 import os
 
-from .models import Service, UserWorkflow, BudgetService, Transaction, UserProfile
+from .models import Service, UserWorkflow, BudgetService, Transaction, UserProfile, GoogleCredential
+from .google_api import get_gmail_service, get_calendar_service
+from google_auth_oauthlib.flow import Flow
+from email.mime.text import MIMEText
+import base64
+import uuid
+from datetime import datetime
 from django.utils import timezone
 from django.urls import reverse
 from .provisioning import provision_user_workflow, toggle_user_service, get_active_service, provision_user_workflow_with_credentials_map
@@ -687,14 +695,7 @@ def n8n_webhook(request, workflow_id):
     return JsonResponse({'error': 'Method not allowed'}, status=405)
 
 
-@csrf_exempt
-def api_budget_remaining(request):
-    """Return remaining budget for a phone number: budget - sum(transactions)."""
-    from django.conf import settings
-    if request.method not in ('GET', 'POST'):
-        return JsonResponse({'error': 'Method not allowed'}, status=405)
-
-    # Accept X-API-Key, Authorization: Bearer <key>, Authorization: <key>, or ?api_key=
+def _extract_api_key(request):
     auth_header = request.headers.get('Authorization')
     bearer = None
     if auth_header:
@@ -703,10 +704,26 @@ def api_budget_remaining(request):
             bearer = parts[1].strip()
         else:
             bearer = auth_header.strip()
+    return request.headers.get('X-API-Key') or bearer or request.GET.get('api_key')
 
-    api_key = request.headers.get('X-API-Key') or bearer or request.GET.get('api_key')
+
+def _require_internal_api_key(request):
+    api_key = _extract_api_key(request)
     if not settings.INTERNAL_API_KEY or api_key != settings.INTERNAL_API_KEY:
         return JsonResponse({'error': 'Unauthorized'}, status=401)
+    return None
+
+
+@csrf_exempt
+def api_budget_remaining(request):
+    """Return remaining budget for a phone number: budget - sum(transactions)."""
+    from django.conf import settings
+    if request.method not in ('GET', 'POST'):
+        return JsonResponse({'error': 'Method not allowed'}, status=405)
+
+    resp = _require_internal_api_key(request)
+    if resp:
+        return resp
 
     phone = request.GET.get('phone')
     if request.method == 'POST' and not phone:
@@ -746,19 +763,9 @@ def api_add_transaction(request):
     if request.method != 'POST':
         return JsonResponse({'error': 'Method not allowed'}, status=405)
 
-    # Accept X-API-Key, Authorization: Bearer <key>, Authorization: <key>, or ?api_key=
-    auth_header = request.headers.get('Authorization')
-    bearer = None
-    if auth_header:
-        parts = auth_header.split(' ', 1)
-        if len(parts) == 2 and parts[0].lower() == 'bearer':
-            bearer = parts[1].strip()
-        else:
-            bearer = auth_header.strip()
-
-    api_key = request.headers.get('X-API-Key') or bearer or request.GET.get('api_key')
-    if not settings.INTERNAL_API_KEY or api_key != settings.INTERNAL_API_KEY:
-        return JsonResponse({'error': 'Unauthorized'}, status=401)
+    resp = _require_internal_api_key(request)
+    if resp:
+        return resp
 
     try:
         payload = json.loads(request.body)
@@ -806,18 +813,9 @@ def api_phone_allowed(request):
     if request.method not in ('GET', 'POST'):
         return JsonResponse({'error': 'Method not allowed'}, status=405)
 
-    # Auth
-    auth_header = request.headers.get('Authorization')
-    bearer = None
-    if auth_header:
-        parts = auth_header.split(' ', 1)
-        if len(parts) == 2 and parts[0].lower() == 'bearer':
-            bearer = parts[1].strip()
-        else:
-            bearer = auth_header.strip()
-    api_key = request.headers.get('X-API-Key') or bearer or request.GET.get('api_key')
-    if not settings.INTERNAL_API_KEY or api_key != settings.INTERNAL_API_KEY:
-        return JsonResponse({'error': 'Unauthorized'}, status=401)
+    resp = _require_internal_api_key(request)
+    if resp:
+        return resp
 
     # Phone extraction
     phone = request.GET.get('phone')
@@ -850,18 +848,9 @@ def api_get_username(request):
     if request.method not in ('GET', 'POST'):
         return JsonResponse({'error': 'Method not allowed'}, status=405)
 
-    # Auth
-    auth_header = request.headers.get('Authorization')
-    bearer = None
-    if auth_header:
-        parts = auth_header.split(' ', 1)
-        if len(parts) == 2 and parts[0].lower() == 'bearer':
-            bearer = parts[1].strip()
-        else:
-            bearer = auth_header.strip()
-    api_key = request.headers.get('X-API-Key') or bearer or request.GET.get('api_key')
-    if not settings.INTERNAL_API_KEY or api_key != settings.INTERNAL_API_KEY:
-        return JsonResponse({'error': 'Unauthorized'}, status=401)
+    resp = _require_internal_api_key(request)
+    if resp:
+        return resp
 
     # Phone extraction
     phone = request.GET.get('phone')
@@ -898,18 +887,9 @@ def api_reset_password(request):
     if request.method != 'POST':
         return JsonResponse({'error': 'Method not allowed'}, status=405)
 
-    # Auth
-    auth_header = request.headers.get('Authorization')
-    bearer = None
-    if auth_header:
-        parts = auth_header.split(' ', 1)
-        if len(parts) == 2 and parts[0].lower() == 'bearer':
-            bearer = parts[1].strip()
-        else:
-            bearer = auth_header.strip()
-    api_key = request.headers.get('X-API-Key') or bearer or request.GET.get('api_key')
-    if not settings.INTERNAL_API_KEY or api_key != settings.INTERNAL_API_KEY:
-        return JsonResponse({'error': 'Unauthorized'}, status=401)
+    resp = _require_internal_api_key(request)
+    if resp:
+        return resp
 
     # Extract data from POST
     try:
@@ -948,3 +928,248 @@ def api_reset_password(request):
         return JsonResponse({'error': 'User not found'}, status=404)
     except Exception as e:
         return JsonResponse({'error': f'Password reset failed: {str(e)}'}, status=500)
+
+
+# ---- Google OAuth and API endpoints ----
+
+
+@login_required
+def google_oauth_start(request):
+    flow = Flow.from_client_config(
+        {
+            "web": {
+                "client_id": settings.GOOGLE_CLIENT_ID,
+                "client_secret": settings.GOOGLE_CLIENT_SECRET,
+                "auth_uri": "https://accounts.google.com/o/oauth2/auth",
+                "token_uri": "https://oauth2.googleapis.com/token",
+                "redirect_uris": [request.build_absolute_uri(reverse('core:google_oauth_callback'))],
+            }
+        },
+        scopes=[
+            "https://www.googleapis.com/auth/gmail.modify",
+            "https://www.googleapis.com/auth/calendar",
+        ],
+    )
+    flow.redirect_uri = request.build_absolute_uri(reverse('core:google_oauth_callback'))
+    authorization_url, state = flow.authorization_url(access_type='offline', prompt='consent')
+    request.session['google_oauth_state'] = state
+    return redirect(authorization_url)
+
+
+@login_required
+def google_oauth_callback(request):
+    state = request.session.get('google_oauth_state')
+    flow = Flow.from_client_config(
+        {
+            "web": {
+                "client_id": settings.GOOGLE_CLIENT_ID,
+                "client_secret": settings.GOOGLE_CLIENT_SECRET,
+                "auth_uri": "https://accounts.google.com/o/oauth2/auth",
+                "token_uri": "https://oauth2.googleapis.com/token",
+                "redirect_uris": [request.build_absolute_uri(reverse('core:google_oauth_callback'))],
+            }
+        },
+        scopes=[
+            "https://www.googleapis.com/auth/gmail.modify",
+            "https://www.googleapis.com/auth/calendar",
+        ],
+        state=state,
+    )
+    flow.redirect_uri = request.build_absolute_uri(reverse('core:google_oauth_callback'))
+    authorization_response = request.build_absolute_uri()
+    flow.fetch_token(authorization_response=authorization_response)
+    creds = flow.credentials
+    GoogleCredential.objects.update_or_create(
+        user=request.user,
+        defaults={
+            'refresh_token': creds.refresh_token,
+            'access_token': creds.token,
+            'token_expiry': creds.expiry,
+            'scopes': ' '.join(creds.scopes or []),
+        },
+    )
+    return redirect('core:dashboard')
+
+
+@csrf_exempt
+def api_google_gmail_send(request):
+    if request.method != 'POST':
+        return JsonResponse({'error': 'Method not allowed'}, status=405)
+    resp = _require_internal_api_key(request)
+    if resp:
+        return resp
+    try:
+        payload = json.loads(request.body or '{}')
+    except Exception:
+        return JsonResponse({'error': 'invalid json'}, status=400)
+    username = payload.get('external_user_id') or payload.get('username')
+    to = payload.get('to')
+    subject = payload.get('subject')
+    body = payload.get('body')
+    if not all([username, to, subject, body]):
+        return JsonResponse({'error': 'missing fields'}, status=400)
+    try:
+        user = User.objects.get(username=username)
+    except User.DoesNotExist:
+        return JsonResponse({'error': 'user not found'}, status=404)
+    service = get_gmail_service(user)
+    message = MIMEText(body)
+    message['to'] = to
+    message['subject'] = subject
+    raw = base64.urlsafe_b64encode(message.as_bytes()).decode()
+    sent = service.users().messages().send(userId='me', body={'raw': raw}).execute()
+    return JsonResponse({'id': sent.get('id')})
+
+
+@csrf_exempt
+def api_google_gmail_messages(request):
+    if request.method != 'GET':
+        return JsonResponse({'error': 'Method not allowed'}, status=405)
+    resp = _require_internal_api_key(request)
+    if resp:
+        return resp
+    username = request.GET.get('external_user_id') or request.GET.get('username')
+    if not username:
+        return JsonResponse({'error': 'external_user_id required'}, status=400)
+    try:
+        user = User.objects.get(username=username)
+    except User.DoesNotExist:
+        return JsonResponse({'error': 'user not found'}, status=404)
+    service = get_gmail_service(user)
+    q = request.GET.get('q')
+    label_ids = request.GET.getlist('labelIds') or None
+    messages = service.users().messages().list(userId='me', q=q, labelIds=label_ids, maxResults=20).execute()
+    return JsonResponse(messages)
+
+
+@csrf_exempt
+def api_google_calendar_events(request):
+    if request.method != 'GET':
+        return JsonResponse({'error': 'Method not allowed'}, status=405)
+    resp = _require_internal_api_key(request)
+    if resp:
+        return resp
+    username = request.GET.get('external_user_id') or request.GET.get('username')
+    if not username:
+        return JsonResponse({'error': 'external_user_id required'}, status=400)
+    try:
+        user = User.objects.get(username=username)
+    except User.DoesNotExist:
+        return JsonResponse({'error': 'user not found'}, status=404)
+    service = get_calendar_service(user)
+    time_min = request.GET.get('timeMin')
+    time_max = request.GET.get('timeMax')
+    events = service.events().list(
+        calendarId='primary',
+        timeMin=time_min,
+        timeMax=time_max,
+        singleEvents=True,
+        orderBy='startTime',
+    ).execute()
+    # Store sync token if provided
+    if events.get('nextSyncToken'):
+        GoogleCredential.objects.filter(user=user).update(calendar_sync_token=events['nextSyncToken'])
+    return JsonResponse({'items': events.get('items', []), 'nextSyncToken': events.get('nextSyncToken')})
+
+
+@csrf_exempt
+def api_google_calendar_events_post(request):
+    if request.method != 'POST':
+        return JsonResponse({'error': 'Method not allowed'}, status=405)
+    resp = _require_internal_api_key(request)
+    if resp:
+        return resp
+    try:
+        payload = json.loads(request.body or '{}')
+    except Exception:
+        return JsonResponse({'error': 'invalid json'}, status=400)
+    username = payload.get('external_user_id') or payload.get('username')
+    event = payload.get('event')
+    if not username or not isinstance(event, dict):
+        return JsonResponse({'error': 'external_user_id and event required'}, status=400)
+    try:
+        user = User.objects.get(username=username)
+    except User.DoesNotExist:
+        return JsonResponse({'error': 'user not found'}, status=404)
+    service = get_calendar_service(user)
+    if event.get('id'):
+        result = service.events().update(calendarId='primary', eventId=event['id'], body=event).execute()
+    else:
+        result = service.events().insert(calendarId='primary', body=event).execute()
+    return JsonResponse(result)
+
+
+@csrf_exempt
+def api_google_gmail_watch(request):
+    if request.method != 'POST':
+        return JsonResponse({'error': 'Method not allowed'}, status=405)
+    resp = _require_internal_api_key(request)
+    if resp:
+        return resp
+    try:
+        payload = json.loads(request.body or '{}')
+    except Exception:
+        return JsonResponse({'error': 'invalid json'}, status=400)
+    username = payload.get('external_user_id') or payload.get('username')
+    topic = payload.get('topicName')
+    if not username or not topic:
+        return JsonResponse({'error': 'external_user_id and topicName required'}, status=400)
+    try:
+        user = User.objects.get(username=username)
+    except User.DoesNotExist:
+        return JsonResponse({'error': 'user not found'}, status=404)
+    service = get_gmail_service(user)
+    watch_body = {'topicName': topic}
+    watch_resp = service.users().watch(userId='me', body=watch_body).execute()
+    GoogleCredential.objects.filter(user=user).update(gmail_history_id=watch_resp.get('historyId'))
+    return JsonResponse(watch_resp)
+
+
+@csrf_exempt
+def api_google_calendar_watch(request):
+    if request.method != 'POST':
+        return JsonResponse({'error': 'Method not allowed'}, status=405)
+    resp = _require_internal_api_key(request)
+    if resp:
+        return resp
+    try:
+        payload = json.loads(request.body or '{}')
+    except Exception:
+        return JsonResponse({'error': 'invalid json'}, status=400)
+    username = payload.get('external_user_id') or payload.get('username')
+    address = payload.get('address')
+    if not username or not address:
+        return JsonResponse({'error': 'external_user_id and address required'}, status=400)
+    try:
+        user = User.objects.get(username=username)
+    except User.DoesNotExist:
+        return JsonResponse({'error': 'user not found'}, status=404)
+    service = get_calendar_service(user)
+    channel_id = str(uuid.uuid4())
+    body = {'id': channel_id, 'type': 'web_hook', 'address': address}
+    watch_resp = service.events().watch(calendarId='primary', body=body).execute()
+    expiration = watch_resp.get('expiration')
+    exp_dt = (
+        datetime.fromtimestamp(int(expiration) / 1000, tz=timezone.utc)
+        if expiration
+        else None
+    )
+    GoogleCredential.objects.filter(user=user).update(
+        calendar_channel_id=watch_resp.get('id'),
+        calendar_resource_id=watch_resp.get('resourceId'),
+        calendar_channel_expiration=exp_dt,
+    )
+    return JsonResponse(watch_resp)
+
+
+@csrf_exempt
+def google_calendar_webhook(request):
+    channel_id = request.headers.get('X-Goog-Channel-ID')
+    if not channel_id:
+        return HttpResponse(status=400)
+    try:
+        cred = GoogleCredential.objects.get(calendar_channel_id=channel_id)
+    except GoogleCredential.DoesNotExist:
+        return HttpResponse(status=404)
+    # In a full implementation you'd trigger sync logic here.
+    return JsonResponse({'status': 'received'})
