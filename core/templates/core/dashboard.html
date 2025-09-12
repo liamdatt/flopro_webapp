@@ -914,10 +914,17 @@
                                 </a>
                                 {% endif %}
                                 {% if service.slug == 'ultimate-personal-assistant' %}
-                                <a href="{% url 'core:google_signout' %}" class="btn btn-secondary" style="background: var(--glass-dark); border-color: var(--medium-gray); color: var(--medium-gray);" onclick="return confirm('Are you sure you want to sign out of Google? This will deactivate the Ultimate Personal Assistant service and you\'ll need to sign in again before the service becomes active.')">
-                                    <i class="fab fa-google"></i>
-                                    Sign Out
-                                </a>
+                                    {% if has_google_credentials %}
+                                    <a href="{% url 'core:google_signout' %}" class="btn btn-secondary" style="background: var(--glass-dark); border-color: var(--medium-gray); color: var(--medium-gray);" onclick="return confirm('Are you sure you want to sign out of Google? This will deactivate the Ultimate Personal Assistant service and you\'ll need to sign in again before the service becomes active.')">
+                                        <i class="fab fa-google"></i>
+                                        Sign Out
+                                    </a>
+                                    {% else %}
+                                    <a href="{% url 'core:service_detail' service.slug %}" class="btn btn-primary" style="background: #4285f4; border-color: #4285f4;">
+                                        <i class="fab fa-google"></i>
+                                        Sign In
+                                    </a>
+                                    {% endif %}
                                 {% endif %}
                             {% else %}
                                 {% comment %} User has service but it's not active {% endcomment %}
@@ -935,10 +942,17 @@
                                 </a>
                                 {% endif %}
                                 {% if service.slug == 'ultimate-personal-assistant' %}
-                                <a href="{% url 'core:google_signout' %}" class="btn btn-secondary" style="background: var(--glass-dark); border-color: var(--medium-gray); color: var(--medium-gray);" onclick="return confirm('Are you sure you want to sign out of Google? This will deactivate the Ultimate Personal Assistant service and you\'ll need to sign in again before the service becomes active.')">
-                                    <i class="fab fa-google"></i>
-                                    Sign Out
-                                </a>
+                                    {% if has_google_credentials %}
+                                    <a href="{% url 'core:google_signout' %}" class="btn btn-secondary" style="background: var(--glass-dark); border-color: var(--medium-gray); color: var(--medium-gray);" onclick="return confirm('Are you sure you want to sign out of Google? This will deactivate the Ultimate Personal Assistant service and you\'ll need to sign in again before the service becomes active.')">
+                                        <i class="fab fa-google"></i>
+                                        Sign Out
+                                    </a>
+                                    {% else %}
+                                    <a href="{% url 'core:service_detail' service.slug %}" class="btn btn-primary" style="background: #4285f4; border-color: #4285f4;">
+                                        <i class="fab fa-google"></i>
+                                        Sign In
+                                    </a>
+                                    {% endif %}
                                 {% endif %}
                             {% endif %}
                         {% else %}

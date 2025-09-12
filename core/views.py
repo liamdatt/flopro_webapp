@@ -147,6 +147,9 @@ def dashboard(request):
     # Create a set of unlocked service IDs for easier template logic
     unlocked_service_ids = set(uw.service.id for uw in user_workflows)
 
+    # Check if user has Google credentials
+    has_google_credentials = GoogleCredential.objects.filter(user=request.user).exists()
+
     # Add service status to each service object for template use
     for service in services:
         service.is_unlocked = service.id in unlocked_service_ids
@@ -157,6 +160,7 @@ def dashboard(request):
         'user_workflows': user_workflows,
         'active_service': active_service,
         'unlocked_service_ids': unlocked_service_ids,
+        'has_google_credentials': has_google_credentials,
     }
     return render(request, 'core/dashboard.html', context)
 
@@ -405,6 +409,15 @@ def toggle_service(request, service_slug=None):
         return redirect('core:dashboard')
 
     service = get_object_or_404(Service, slug=service_slug, is_active=True)
+
+    # Special check for Ultimate Personal Assistant - requires Google credentials
+    if service.slug == 'ultimate-personal-assistant':
+        from .models import GoogleCredential
+        if not GoogleCredential.objects.filter(user=request.user).exists():
+            if request.content_type == 'application/json':
+                return JsonResponse({'success': False, 'error': 'Google sign-in required for Ultimate Personal Assistant. Please sign in with Google first.'})
+            messages.warning(request, 'Google sign-in required for Ultimate Personal Assistant. Please sign in with Google first.')
+            return redirect('core:service_detail', service_slug=service.slug)
 
     if toggle_user_service(user=request.user, service=service):
         if request.content_type == 'application/json':
@@ -1364,6 +1377,22 @@ def google_signout(request):
         except (Service.DoesNotExist, UserWorkflow.DoesNotExist):
             # Service might not exist or not be unlocked
             messages.success(request, "Successfully signed out of Google.")
+
+        # Also deactivate any other active services when signing out of Google
+        # since UPA might have been the active one
+        from .provisioning import get_active_service
+        current_active = get_active_service(request.user)
+        if not current_active:
+            # If no service is active after UPA deactivation, activate the first available service
+            try:
+                first_workflow = UserWorkflow.objects.filter(user=request.user).exclude(
+                    service__slug='ultimate-personal-assistant'
+                ).first()
+                if first_workflow:
+                    first_workflow.active = True
+                    first_workflow.save()
+            except:
+                pass
 
     except GoogleCredential.DoesNotExist:
         messages.warning(request, "No Google credentials found to sign out from.")

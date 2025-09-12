@@ -21,12 +21,18 @@ def unlock_service_for_user(*, user, service: Service) -> bool:
     has_active_service = UserWorkflow.objects.filter(user=user, active=True).exists()
     is_first_service = not UserWorkflow.objects.filter(user=user).exists()
 
+    # Special handling for Ultimate Personal Assistant - requires Google credentials to activate
+    should_activate = True
+    if service.slug == 'ultimate-personal-assistant':
+        from .models import GoogleCredential
+        should_activate = GoogleCredential.objects.filter(user=user).exists()
+
     # Create UserWorkflow record
     UserWorkflow.objects.create(
         user=user,
         service=service,
         name=f"{service.name} - {user.username}",
-        active=is_first_service or not has_active_service,  # Active if first service or no active services
+        active=(is_first_service or not has_active_service) and should_activate,  # Only activate if conditions met
         # n8n fields remain None since we're not using n8n
         n8n_workflow_id=None,
         n8n_credential_id=None,
