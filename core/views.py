@@ -1339,3 +1339,33 @@ def google_calendar_webhook(request):
         return HttpResponse(status=404)
     # In a full implementation you'd trigger sync logic here.
     return JsonResponse({'status': 'received'})
+
+
+@login_required
+def google_signout(request):
+    """Revoke Google OAuth access and deactivate Ultimate Personal Assistant service."""
+    try:
+        # Delete Google credentials
+        google_cred = GoogleCredential.objects.get(user=request.user)
+        google_cred.delete()
+
+        # Deactivate Ultimate Personal Assistant service if it's active
+        try:
+            from .models import Service
+            upa_service = Service.objects.get(slug='ultimate-personal-assistant')
+            user_workflow = UserWorkflow.objects.get(user=request.user, service=upa_service)
+
+            # Deactivate the service
+            user_workflow.active = False
+            user_workflow.save()
+
+            messages.success(request, "Successfully signed out of Google. The Ultimate Personal Assistant service has been deactivated. You'll need to sign in again before the service becomes active.")
+
+        except (Service.DoesNotExist, UserWorkflow.DoesNotExist):
+            # Service might not exist or not be unlocked
+            messages.success(request, "Successfully signed out of Google.")
+
+    except GoogleCredential.DoesNotExist:
+        messages.warning(request, "No Google credentials found to sign out from.")
+
+    return redirect('core:dashboard')

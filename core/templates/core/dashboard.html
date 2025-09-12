@@ -913,6 +913,12 @@
                                     View
                                 </a>
                                 {% endif %}
+                                {% if service.slug == 'ultimate-personal-assistant' %}
+                                <a href="{% url 'core:google_signout' %}" class="btn btn-secondary" style="background: var(--glass-dark); border-color: var(--medium-gray); color: var(--medium-gray);" onclick="return confirm('Are you sure you want to sign out of Google? This will deactivate the Ultimate Personal Assistant service and you\'ll need to sign in again before the service becomes active.')">
+                                    <i class="fab fa-google"></i>
+                                    Sign Out
+                                </a>
+                                {% endif %}
                             {% else %}
                                 {% comment %} User has service but it's not active {% endcomment %}
                                 <form method="post" action="{% url 'core:toggle_service_slug' service.slug %}" style="display: inline;">
@@ -926,6 +932,12 @@
                                 <a href="{% url 'core:service_overview' service.slug %}" class="btn btn-secondary">
                                     <i class="fas fa-eye"></i>
                                     View
+                                </a>
+                                {% endif %}
+                                {% if service.slug == 'ultimate-personal-assistant' %}
+                                <a href="{% url 'core:google_signout' %}" class="btn btn-secondary" style="background: var(--glass-dark); border-color: var(--medium-gray); color: var(--medium-gray);" onclick="return confirm('Are you sure you want to sign out of Google? This will deactivate the Ultimate Personal Assistant service and you\'ll need to sign in again before the service becomes active.')">
+                                    <i class="fab fa-google"></i>
+                                    Sign Out
                                 </a>
                                 {% endif %}
                             {% endif %}

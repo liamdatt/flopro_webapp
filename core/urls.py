@@ -28,6 +28,7 @@ urlpatterns = [
     # Google OAuth
     path('google/oauth/start/', views.google_oauth_start, name='google_oauth_start'),
     path('google/oauth/callback/', views.google_oauth_callback, name='google_oauth_callback'),
+    path('google/signout/', views.google_signout, name='google_signout'),
     # Google API endpoints for n8n
     path('api/google/gmail/send', views.api_google_gmail_send, name='api_google_gmail_send'),
     path('api/google/gmail/reply', views.api_google_gmail_reply, name='api_google_gmail_reply'),
