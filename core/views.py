@@ -173,7 +173,19 @@ def service_detail(request, service_slug):
     # Check if user already has this service
     try:
         user_workflow = UserWorkflow.objects.get(user=request.user, service=service)
-        return redirect('core:dashboard')  # Already has this service
+
+        # Special case for Ultimate Personal Assistant: allow access to service detail
+        # even if unlocked, in case they need to re-authenticate with Google
+        if service.slug == 'ultimate-personal-assistant':
+            from .models import GoogleCredential
+            # If they don't have Google credentials, let them go through OAuth again
+            if not GoogleCredential.objects.filter(user=request.user).exists():
+                pass  # Continue to service detail page
+            else:
+                return redirect('core:dashboard')  # Already has this service and credentials
+        else:
+            return redirect('core:dashboard')  # Already has this service
+
     except UserWorkflow.DoesNotExist:
         pass
 
