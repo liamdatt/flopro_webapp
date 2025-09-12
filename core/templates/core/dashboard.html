@@ -885,7 +885,8 @@
                 </label>
                 <form method="post" id="active-service-form" style="display: inline;">
                     {% csrf_token %}
-                    <select id="active-service-select" name="service_slug" class="active-service-dropdown">
+                    <select id="active-service-select" name="service_slug" class="active-service-dropdown" required>
+                        <option value="" disabled>Select a service...</option>
                         {% for uw in user_workflows %}
                         <option value="{{ uw.service.slug }}" {% if uw.active %}selected{% endif %}>
                             {{ uw.service.name }}
@@ -1031,46 +1032,78 @@
     </div>
 
     <script>
-        // Auto-hide messages after 5 seconds
-        setTimeout(function() {
-            const messages = document.querySelectorAll('.message');
-            messages.forEach(function(message) {
-                message.style.animation = 'slideIn 0.3s ease reverse';
-                setTimeout(function() {
-                    message.remove();
-                }, 300);
-            });
-        }, 5000);
+        // Wait for DOM to be fully loaded
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('DOM fully loaded, initializing dashboard JavaScript');
 
-        // Add smooth hover effects
-        document.querySelectorAll('.service-card').forEach(card => {
-            card.addEventListener('mouseenter', function() {
-                this.style.transform = 'translateY(-8px)';
-            });
-            
-            card.addEventListener('mouseleave', function() {
-                this.style.transform = 'translateY(-5px)';
-            });
-        });
+            // Auto-hide messages after 5 seconds
+            setTimeout(function() {
+                const messages = document.querySelectorAll('.message');
+                messages.forEach(function(message) {
+                    message.style.animation = 'slideIn 0.3s ease reverse';
+                    setTimeout(function() {
+                        message.remove();
+                    }, 300);
+                });
+            }, 5000);
 
-        // Parallax effect for background
-        window.addEventListener('scroll', () => {
-            const scrolled = window.pageYOffset;
-            const rate = scrolled * -0.2;
-            const background = document.querySelector('.grid-background');
-            if (background) {
-                background.style.transform = `translateY(${rate}px)`;
-            }
-        });
+            // Add smooth hover effects
+            document.querySelectorAll('.service-card').forEach(card => {
+                card.addEventListener('mouseenter', function() {
+                    this.style.transform = 'translateY(-8px)';
+                });
 
-        // Handle active service switch
-        document.getElementById('active-service-form')?.addEventListener('submit', function(e) {
+                card.addEventListener('mouseleave', function() {
+                    this.style.transform = 'translateY(-5px)';
+                });
+            });
+
+            // Parallax effect for background
+            window.addEventListener('scroll', () => {
+                const scrolled = window.pageYOffset;
+                const rate = scrolled * -0.2;
+                const background = document.querySelector('.grid-background');
+                if (background) {
+                    background.style.transform = `translateY(${rate}px)`;
+                }
+            });
+
+            // Handle active service switch
+        const activeServiceForm = document.getElementById('active-service-form');
+        console.log('Active service form found:', !!activeServiceForm);
+
+        if (activeServiceForm) {
+            activeServiceForm.addEventListener('submit', function(e) {
+                console.log('Active service form submit event triggered');
             e.preventDefault();
 
             const formData = new FormData(this);
             const serviceSlug = formData.get('service_slug');
 
+            console.log('Form data entries:');
+            for (let [key, value] of formData.entries()) {
+                console.log(`  ${key}: ${value}`);
+            }
             console.log('Switching to service:', serviceSlug);
+
+            if (!serviceSlug) {
+                console.error('No service slug selected!');
+                showMessage('Please select a service to switch to.', 'error');
+                button.innerHTML = originalText;
+                button.disabled = false;
+                return;
+            }
+
+            // Check if user is trying to switch to the already active service
+            const selectElement = this.querySelector('select[name="service_slug"]');
+            const currentlySelected = selectElement.querySelector('option[selected]');
+            if (currentlySelected && currentlySelected.value === serviceSlug) {
+                console.log('User selected the already active service');
+                showMessage('This service is already active.', 'warning');
+                button.innerHTML = originalText;
+                button.disabled = false;
+                return;
+            }
 
             // Show loading state
             const button = this.querySelector('button[type="submit"]');
@@ -1123,7 +1156,10 @@
                 button.innerHTML = originalText;
                 button.disabled = false;
             });
-        });
+            });
+        } else {
+            console.error('Active service form not found!');
+        }
 
         // Helper function to show messages
         function showMessage(message, type = 'info') {
@@ -1147,7 +1183,8 @@
                 messageDiv.style.animation = 'slideIn 0.3s ease reverse';
                 setTimeout(() => messageDiv.remove(), 300);
             }, 5000);
-        }
+        });
+        }); // End of DOMContentLoaded
     </script>
 </body>
 </html>

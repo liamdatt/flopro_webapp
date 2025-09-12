@@ -75,6 +75,11 @@ def landing_page(request):
     return render(request, 'core/landing_page.html', {'services': services})
 
 
+def privacy_policy(request):
+    """Privacy Policy page view - accessible without authentication."""
+    return render(request, 'core/privacy_policy.html')
+
+
 def signup_view(request):
     """User signup view."""
     if request.user.is_authenticated:
