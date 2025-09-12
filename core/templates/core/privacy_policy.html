@@ -398,6 +398,11 @@
                         <li>Detect, prevent, and address technical issues</li>
                         <li>Provide customer support and respond to your requests</li>
                     </ul>
+                    <p><strong>Important:</strong> For connected Google services (Gmail and Google Calendar), the application
+                    uses Google's APIs to perform actions you explicitly authorize (such as sending email on your behalf or
+                    creating calendar events). <strong>We do not store or persist the contents of your emails or calendar events</strong> on our servers.
+                    Any data accessed through Google APIs is used transiently to complete the requested action and is not retained
+                    beyond what is necessary to fulfill that action.</p>
                 </div>
             </div>
 
@@ -406,12 +411,7 @@
                 <div class="section-content">
                     <p>We do not sell, trade, or rent your personal information to third parties. We may share your information only in the following circumstances:</p>
 
-                    <p><strong>3.1 Service Providers:</strong> We may share information with trusted third-party service providers who assist us in operating our services, such as:</p>
-                    <ul style="margin-left: 2rem; margin-bottom: 1rem;">
-                        <li>Cloud hosting providers</li>
-                        <li>Analytics services</li>
-                        <li>Customer support platforms</li>
-                    </ul>
+                    <p><strong>3.1 Service Providers:</strong> We may share limited information with trusted third-party service providers who assist us in operating our services (e.g., hosting and infrastructure). We do <strong>not</strong> share the contents of your emails or calendar events with these providers. Access to Google data is scoped and handled directly via Google's APIs under your consent.</p>
 
                     <p><strong>3.2 Legal Requirements:</strong> We may disclose information if required by law or if we believe such action is necessary to:</p>
                     <ul style="margin-left: 2rem;">
@@ -428,13 +428,13 @@
                 <div class="section-content">
                     <p>We implement appropriate technical and organizational measures to protect your personal information against unauthorized access, alteration, disclosure, or destruction. These measures include:</p>
                     <ul style="margin-left: 2rem;">
-                        <li>Encryption of data in transit and at rest</li>
+                        <li>Encryption of data in transit and at rest (where applicable)</li>
                         <li>Regular security audits and updates</li>
                         <li>Access controls and authentication requirements</li>
                         <li>Secure data storage and backup systems</li>
                         <li>Employee training on data protection</li>
                     </ul>
-
+                    <p>For Google data, we request the minimum scopes necessary and use access tokens securely to perform the action you initiate. <strong>Email and calendar contents are not stored on our servers</strong>.</p>
                     <p>However, no method of transmission over the internet or electronic storage is 100% secure. We cannot guarantee absolute security.</p>
                 </div>
             </div>
@@ -442,13 +442,13 @@
             <div class="privacy-section">
                 <h2 class="section-title">5. Data Retention</h2>
                 <div class="section-content">
-                    <p>We retain your personal information for as long as necessary to provide our services and fulfill the purposes outlined in this privacy policy, unless a longer retention period is required by law.</p>
+                    <p>We retain account information (e.g., username, phone number) for as long as your account is active or as needed to provide services. <strong>Operational data accessed from Gmail or Google Calendar via APIs (such as message contents or event details) is processed transiently and not retained</strong>, other than minimal metadata necessary to complete or confirm the requested action (for example, an email ID or event ID returned by Google).</p>
 
                     <p>When you delete your account or request deletion of your data, we will:</p>
                     <ul style="margin-left: 2rem;">
-                        <li>Delete your personal information within 30 days</li>
-                        <li>Remove your data from active systems</li>
-                        <li>Retain minimal data for legal compliance and fraud prevention</li>
+                        <li>Delete your account and profile information</li>
+                        <li>Revoke Google access tokens (if applicable) and disconnect integrations</li>
+                        <li>Remove residual operational metadata not required for legal or security purposes</li>
                     </ul>
                 </div>
             </div>
@@ -516,11 +516,10 @@
                 <div class="section-content">
                     <p>Our service integrates with third-party services including:</p>
                     <ul style="margin-left: 2rem; margin-bottom: 1rem;">
-                        <li><strong>Google Services:</strong> Gmail and Google Calendar for automation features</li>
-                        <li><strong>Cloud Providers:</strong> For hosting and data storage</li>
-                        <li><strong>Analytics Services:</strong> For usage tracking and improvements</li>
+                        <li><strong>Google Services:</strong> Gmail and Google Calendar to send emails and manage events on your behalf, under permissions you grant. <strong>We do not store email or calendar content</strong>.</li>
+                        <li><strong>Cloud Providers:</strong> For hosting and data storage of our application (not your email/calendar contents)</li>
+                        <li><strong>Analytics Services:</strong> For usage tracking and improvements (no email/calendar contents)</li>
                     </ul>
-
                     <p>These third parties have their own privacy policies. We encourage you to review them.</p>
                 </div>
             </div>
